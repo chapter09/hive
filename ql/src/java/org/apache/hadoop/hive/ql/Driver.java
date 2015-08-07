@@ -402,6 +402,9 @@ public class Driver implements CommandProcessor {
       tree = ParseUtils.findRootNonNullToken(tree);
       perfLogger.PerfLogEnd(CLASS_NAME, PerfLogger.PARSE);
 
+      // raajay
+      System.out.println("Raajay: AST");
+      System.out.println(tree.toStringTree());
 
       perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.ANALYZE);
       BaseSemanticAnalyzer sem = SemanticAnalyzerFactory.get(conf, tree);
@@ -443,6 +446,10 @@ public class Driver implements CommandProcessor {
 
       plan = new QueryPlan(queryStr, sem, perfLogger.getStartTime(PerfLogger.DRIVER_RUN), queryId,
         SessionState.get().getHiveOperation(), getSchema(sem, conf));
+
+      // raajay
+      System.out.println("Raajay -  Query Plan");
+      System.out.println(plan.toString());
 
       conf.setVar(HiveConf.ConfVars.HIVEQUERYSTRING, queryStr);
 

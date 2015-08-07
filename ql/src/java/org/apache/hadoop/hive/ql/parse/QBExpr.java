@@ -99,6 +99,21 @@ public class QBExpr {
     return qbexpr2;
   }
 
+  public void printConsole() {
+    if (opcode == Opcode.NULLOP) {
+      System.out.println("start qb = " + qb);
+      qb.printConsole();
+      System.out.println("end qb = " + qb);
+    } else {
+      System.out.println("start qbexpr1 = " + qbexpr1);
+      qbexpr1.printConsole();
+      System.out.println("end qbexpr1 = " + qbexpr1);
+      System.out.println("start qbexpr2 = " + qbexpr2);
+      qbexpr2.printConsole();
+      System.out.println("end qbexpr2 = " + qbexpr2);
+    }
+  }
+
   public void print(String msg) {
     if (opcode == Opcode.NULLOP) {
       LOG.info(msg + "start qb = " + qb);

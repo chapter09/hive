@@ -103,6 +103,17 @@ public class QB {
     }
   }
 
+  public void printConsole()
+  {
+      System.out.println("Raajay - QB");
+      for (String alias : getSubqAliases()) {
+          QBExpr qbexpr = getSubqForAlias(alias);
+          System.out.println("start subquery " + alias);
+          qbexpr.printConsole();
+          System.out.println("end subquery " + alias);
+      }
+  }
+
   public QB() {
   }
 
