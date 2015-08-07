@@ -743,6 +743,7 @@ public class HiveConf extends Configuration {
         "How many rows in the joining tables (except the streaming table) should be cached in memory."),
 
     // CBO related
+    HIVE_QUERY_EXTID("hive.query.extid", "cross_query_default_id", "Unique string to be used as file name for dumping AST and query plans"),
     HIVE_CBO_ENABLED("hive.cbo.enable", true, "Flag to control enabling Cost Based Optimizations using Calcite framework."),
     HIVE_CBO_RETPATH_HIVEOP("hive.cbo.returnpath.hiveop", false, "Flag to control calcite plan to hive operator conversion"),
     HIVE_CBO_EXTENDED_COST_MODEL("hive.cbo.costmodel.extended", false, "Flag to control enabling the extended cost model based on"
