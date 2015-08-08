@@ -22,7 +22,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -403,8 +406,11 @@ public class Driver implements CommandProcessor {
       perfLogger.PerfLogEnd(CLASS_NAME, PerfLogger.PARSE);
 
       // raajay
-      System.out.println("Raajay: AST");
-      System.out.println(tree.toStringTree());
+//      String astDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".ast_parse";
+//      String astDumpFile = Path.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), astDumpFileName);
+//      PrintWriter astWriter = new PrintWriter(astDumpFile, "UTF-8");
+//      astWriter.write(tree.toStringTree());
+//      astWriter.close();
 
       perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.ANALYZE);
       BaseSemanticAnalyzer sem = SemanticAnalyzerFactory.get(conf, tree);
@@ -448,8 +454,11 @@ public class Driver implements CommandProcessor {
         SessionState.get().getHiveOperation(), getSchema(sem, conf));
 
       // raajay
-      System.out.println("Raajay -  Query Plan");
-      System.out.println(plan.toString());
+//      String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
+//      String qpDumpFile = Path.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
+//      PrintWriter qpWriter = new PrintWriter(qpDumpFile, "UTF-8");
+//      qpWriter.write(plan.toString());
+//      qpWriter.close();
 
       conf.setVar(HiveConf.ConfVars.HIVEQUERYSTRING, queryStr);
 
