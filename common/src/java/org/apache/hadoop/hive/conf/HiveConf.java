@@ -742,8 +742,11 @@ public class HiveConf extends Configuration {
     HIVEJOINCACHESIZE("hive.join.cache.size", 25000,
         "How many rows in the joining tables (except the streaming table) should be cached in memory."),
 
+    // Cross query related  (changes made by Raajay Viswanathan)
+    HIVE_CROSSQUERY_EXTID("hive.crossquery.extid", "cross_query_default_id", "Unique string prefix for filename used for dumping AST and query plans"),
+    HIVE_CROSSQUERY_DUMPDIR("hive.crossquery.dumpdir", "", "Folder to dump the ast and query plans"),
+
     // CBO related
-    HIVE_QUERY_EXTID("hive.query.extid", "cross_query_default_id", "Unique string to be used as file name for dumping AST and query plans"),
     HIVE_CBO_ENABLED("hive.cbo.enable", true, "Flag to control enabling Cost Based Optimizations using Calcite framework."),
     HIVE_CBO_RETPATH_HIVEOP("hive.cbo.returnpath.hiveop", false, "Flag to control calcite plan to hive operator conversion"),
     HIVE_CBO_EXTENDED_COST_MODEL("hive.cbo.costmodel.extended", false, "Flag to control enabling the extended cost model based on"
