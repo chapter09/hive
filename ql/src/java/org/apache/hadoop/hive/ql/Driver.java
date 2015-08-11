@@ -459,18 +459,6 @@ public class Driver implements CommandProcessor {
       plan = new QueryPlan(queryStr, sem, perfLogger.getStartTime(PerfLogger.DRIVER_RUN), queryId,
         SessionState.get().getHiveOperation(), getSchema(sem, conf));
 
-      // raajay
-      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
-        Path qpDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
-        LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
-        Files.createDirectories(qpDumpFile.getParent());
-        LOG.info("Writing Query Plan to " + qpDumpFile.toString());
-        PrintWriter qpWriter = new PrintWriter(qpDumpFile.toString(), "UTF-8");
-        qpWriter.write(plan.toString());
-        qpWriter.close();
-      }
-
       conf.setVar(HiveConf.ConfVars.HIVEQUERYSTRING, queryStr);
 
       conf.set("mapreduce.workflow.id", "hive_" + queryId);
@@ -509,6 +497,19 @@ public class Driver implements CommandProcessor {
               + explainOutput);
         }
       }
+
+      // raajay
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
+        Path qpDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
+        LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+        Files.createDirectories(qpDumpFile.getParent());
+        LOG.info("Writing Query Plan to " + qpDumpFile.toString());
+        PrintWriter qpWriter = new PrintWriter(qpDumpFile.toString(), "UTF-8");
+        qpWriter.write(plan.toString());
+        qpWriter.close();
+      }
+
       return 0;
     } catch (Exception e) {
       ErrorMsg error = ErrorMsg.getErrorMsg(e.getMessage());

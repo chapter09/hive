@@ -67,6 +67,7 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.metadata.CachingRelMetadataProvider;
 import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.rules.FilterAggregateTransposeRule;
 import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
 import org.apache.calcite.rel.rules.JoinToMultiJoinRule;
@@ -940,6 +941,8 @@ public class CalcitePlanner extends SemanticAnalyzer {
           LOG.info("Writing CBO optimized plan " + optASTFile.toString());
           PrintWriter optWriter = new PrintWriter(optASTFile.toString(), "UTF-8");
           optWriter.write(RelOptUtil.toString(calciteOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
+          optWriter.write("\nRow Count = " + RelMetadataQuery.getRowCount(calciteOptimizedPlan).toString());
+          optWriter.write("\nCumulative Cost = " + RelMetadataQuery.getCumulativeCost(calciteOptimizedPlan).toString());
           optWriter.close();
         } catch (Exception e) {
           LOG.debug("Cannot open: " + optASTFileName);
