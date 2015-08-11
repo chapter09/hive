@@ -21,6 +21,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -609,7 +613,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
     ASTNode optiqOptimizedAST = null;
     RelNode optimizedOptiqPlan = null;
     CalcitePlannerAction calcitePlannerAction = new CalcitePlannerAction(prunedPartitions);
-
+    this.getQB().print("Before CalcitePlannerAction apply");
     try {
       optimizedOptiqPlan = Frameworks.withPlanner(calcitePlannerAction, Frameworks
           .newConfigBuilder().typeSystem(new HiveTypeSystemImpl()).build());
@@ -825,6 +829,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       HiveDefaultRelMetadataProvider mdProvider = new HiveDefaultRelMetadataProvider(conf);
 
       // 2. Apply Pre Join Order optimizations
+      // raajay - there are 4 sets of rules that can be switched on/off in pre join ordering transforms
       calcitePreCboPlan = applyPreJoinOrderingTransforms(calciteGenPlan,
               mdProvider.getMetadataProvider());
 
@@ -835,16 +840,34 @@ public class CalcitePlanner extends SemanticAnalyzer {
           .traitSetOf(HiveRelNode.CONVENTION, RelCollations.EMPTY);
 
       HepProgram hepPgm = null;
-      HepProgramBuilder hepPgmBldr = new HepProgramBuilder().addMatchOrder(HepMatchOrder.BOTTOM_UP)
-          .addRuleInstance(new JoinToMultiJoinRule(HiveJoin.class));
+
+      HepProgramBuilder hepPgmBldr = new HepProgramBuilder().addMatchOrder(HepMatchOrder.BOTTOM_UP);
+
+      // CROSSQUERY #4
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 4) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#4");
+        hepPgmBldr.addRuleInstance(new JoinToMultiJoinRule(HiveJoin.class));
+      }
+
+      // CROSSQUERY #6
       hepPgmBldr.addRuleInstance(new LoptOptimizeJoinRule(HiveJoin.HIVE_JOIN_FACTORY,
           HiveProject.DEFAULT_PROJECT_FACTORY, HiveFilter.DEFAULT_FILTER_FACTORY));
 
-      hepPgmBldr.addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE);
+      // CROSSQUERY #5
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 5) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#5");
+        hepPgmBldr.addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE);
+      }
+
+      // CROSSQUERY #8
       hepPgmBldr.addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE);
+      // CROSSQUERY #9
       hepPgmBldr.addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE);
+      // CROSSQUERY #10
       hepPgmBldr.addRuleInstance(ProjectRemoveRule.INSTANCE);
+      // CROSSQUERY #11
       hepPgmBldr.addRuleInstance(UnionMergeRule.INSTANCE);
+      // CROSSQUERY #12
       hepPgmBldr.addRuleInstance(new ProjectMergeRule(false, HiveProject.DEFAULT_PROJECT_FACTORY));
 
       hepPgm = hepPgmBldr.build();
@@ -864,6 +887,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       calciteOptimizedPlan = hepPlanner.findBestExp();
 
       // 4. Run rule to try to remove projects on top of join operators
+      // CROSSQUERY #13
       calciteOptimizedPlan = hepPlan(calciteOptimizedPlan, false, mdProvider.getMetadataProvider(),
               HepMatchOrder.BOTTOM_UP, HiveJoinCommuteRule.INSTANCE);
 
@@ -905,6 +929,23 @@ public class CalcitePlanner extends SemanticAnalyzer {
             + RelOptUtil.toString(calciteOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
       }
 
+      // raajay - dump the optimized plan
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
+            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".opt_plan";
+        Path optASTFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), optASTFileName);
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(optASTFile.getParent());
+          LOG.info("Writing CBO optimized plan " + optASTFile.toString());
+          PrintWriter optWriter = new PrintWriter(optASTFile.toString(), "UTF-8");
+          optWriter.write(RelOptUtil.toString(calciteOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
+          optWriter.close();
+        } catch (Exception e) {
+          LOG.debug("Cannot open: " + optASTFileName);
+        }
+      }
+
       return calciteOptimizedPlan;
     }
 
@@ -934,8 +975,12 @@ public class CalcitePlanner extends SemanticAnalyzer {
       }
 
       // 1. Push Down Semi Joins
-      basePlan = hepPlan(basePlan, true, mdProvider, SemiJoinJoinTransposeRule.INSTANCE,
-          SemiJoinFilterTransposeRule.INSTANCE, SemiJoinProjectTransposeRule.INSTANCE);
+      // CROSS QUERY #0
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 0) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#0");
+        basePlan = hepPlan(basePlan, true, mdProvider, SemiJoinJoinTransposeRule.INSTANCE,
+            SemiJoinFilterTransposeRule.INSTANCE, SemiJoinProjectTransposeRule.INSTANCE);
+      }
 
       // 2. Add not null filters
       if (conf.getBoolVar(HiveConf.ConfVars.HIVE_CBO_RETPATH_HIVEOP)) {
@@ -943,30 +988,42 @@ public class CalcitePlanner extends SemanticAnalyzer {
       }
 
       // 3. Constant propagation, common filter extraction, and PPD
-      basePlan = hepPlan(basePlan, true, mdProvider,
-          ReduceExpressionsRule.PROJECT_INSTANCE,
-          ReduceExpressionsRule.FILTER_INSTANCE,
-          ReduceExpressionsRule.JOIN_INSTANCE,
-          HivePreFilteringRule.INSTANCE,
-          new HiveFilterProjectTransposeRule(Filter.class, HiveFilter.DEFAULT_FILTER_FACTORY,
-                  HiveProject.class, HiveProject.DEFAULT_PROJECT_FACTORY),
-          new HiveFilterSetOpTransposeRule(HiveFilter.DEFAULT_FILTER_FACTORY),
-          HiveFilterJoinRule.JOIN,
-          HiveFilterJoinRule.FILTER_ON_JOIN,
-          new FilterAggregateTransposeRule(Filter.class,
-              HiveFilter.DEFAULT_FILTER_FACTORY, Aggregate.class));
+      // CROSS QUERY #1
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 1) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#1");
+        basePlan = hepPlan(basePlan, true, mdProvider,
+            ReduceExpressionsRule.PROJECT_INSTANCE,
+            ReduceExpressionsRule.FILTER_INSTANCE,
+            ReduceExpressionsRule.JOIN_INSTANCE,
+            HivePreFilteringRule.INSTANCE,
+            new HiveFilterProjectTransposeRule(Filter.class, HiveFilter.DEFAULT_FILTER_FACTORY,
+                    HiveProject.class, HiveProject.DEFAULT_PROJECT_FACTORY),
+            new HiveFilterSetOpTransposeRule(HiveFilter.DEFAULT_FILTER_FACTORY),
+            HiveFilterJoinRule.JOIN,
+            HiveFilterJoinRule.FILTER_ON_JOIN,
+            new FilterAggregateTransposeRule(Filter.class,
+                HiveFilter.DEFAULT_FILTER_FACTORY, Aggregate.class));
+      }
 
       // 4. Transitive inference & Partition Pruning
-      basePlan = hepPlan(basePlan, false, mdProvider, new HiveJoinPushTransitivePredicatesRule(
-          Join.class, HiveFilter.DEFAULT_FILTER_FACTORY),
-          new HivePartitionPruneRule(conf));
+      // CROSSQUERY #2
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 2) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#2");
+        basePlan = hepPlan(basePlan, false, mdProvider, new HiveJoinPushTransitivePredicatesRule(
+            Join.class, HiveFilter.DEFAULT_FILTER_FACTORY),
+            new HivePartitionPruneRule(conf));
+      }
 
       // 5. Projection Pruning
-      HiveRelFieldTrimmer fieldTrimmer = new HiveRelFieldTrimmer(null, HiveProject.DEFAULT_PROJECT_FACTORY,
-          HiveFilter.DEFAULT_FILTER_FACTORY, HiveJoin.HIVE_JOIN_FACTORY,
-          HiveSemiJoin.HIVE_SEMIJOIN_FACTORY, HiveSort.HIVE_SORT_REL_FACTORY,
-          HiveAggregate.HIVE_AGGR_REL_FACTORY, HiveUnion.UNION_REL_FACTORY);
-      basePlan = fieldTrimmer.trim(basePlan);
+      // CROSS QUERY #3
+      if(0 == ((conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION) >> 3) & 1)) {
+        LOG.info("Including optimization CROSSQUERY#3");
+        HiveRelFieldTrimmer fieldTrimmer = new HiveRelFieldTrimmer(null, HiveProject.DEFAULT_PROJECT_FACTORY,
+            HiveFilter.DEFAULT_FILTER_FACTORY, HiveJoin.HIVE_JOIN_FACTORY,
+            HiveSemiJoin.HIVE_SEMIJOIN_FACTORY, HiveSort.HIVE_SORT_REL_FACTORY,
+            HiveAggregate.HIVE_AGGR_REL_FACTORY, HiveUnion.UNION_REL_FACTORY);
+        basePlan = fieldTrimmer.trim(basePlan);
+      }
 
       // 6. Rerun PPD through Project as column pruning would have introduced DT
       // above scans

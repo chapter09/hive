@@ -25,6 +25,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -406,11 +407,16 @@ public class Driver implements CommandProcessor {
       perfLogger.PerfLogEnd(CLASS_NAME, PerfLogger.PARSE);
 
       // raajay
-//      String astDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".ast_parse";
-//      String astDumpFile = Path.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), astDumpFileName);
-//      PrintWriter astWriter = new PrintWriter(astDumpFile, "UTF-8");
-//      astWriter.write(tree.toStringTree());
-//      astWriter.close();
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String astDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".ast_parse";
+        Path astDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), astDumpFileName);
+        LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+        Files.createDirectories(astDumpFile.getParent());
+        LOG.info("Writing AST to " + astDumpFile.toString());
+        PrintWriter astWriter = new PrintWriter(astDumpFile.toString(), "UTF-8");
+        astWriter.write(tree.toStringTree());
+        astWriter.close();
+      }
 
       perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.ANALYZE);
       BaseSemanticAnalyzer sem = SemanticAnalyzerFactory.get(conf, tree);
@@ -454,11 +460,16 @@ public class Driver implements CommandProcessor {
         SessionState.get().getHiveOperation(), getSchema(sem, conf));
 
       // raajay
-//      String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
-//      String qpDumpFile = Path.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
-//      PrintWriter qpWriter = new PrintWriter(qpDumpFile, "UTF-8");
-//      qpWriter.write(plan.toString());
-//      qpWriter.close();
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
+        Path qpDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
+        LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+        Files.createDirectories(qpDumpFile.getParent());
+        LOG.info("Writing Query Plan to " + qpDumpFile.toString());
+        PrintWriter qpWriter = new PrintWriter(qpDumpFile.toString(), "UTF-8");
+        qpWriter.write(plan.toString());
+        qpWriter.close();
+      }
 
       conf.setVar(HiveConf.ConfVars.HIVEQUERYSTRING, queryStr);
 
