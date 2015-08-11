@@ -10124,8 +10124,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     // 2. Gen OP Tree from resolved Parse Tree
-    this.qb.printConsole();
+    this.qb.print("Before genOPTree");
     Operator sinkOp = genOPTree(ast, plannerCtx);
+    this.qb.print("After genOPTree");
 
     // 3. Deduce Resultset Schema
     if (createVwDesc != null) {

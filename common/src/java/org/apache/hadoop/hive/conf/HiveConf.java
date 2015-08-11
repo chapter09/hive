@@ -743,8 +743,11 @@ public class HiveConf extends Configuration {
         "How many rows in the joining tables (except the streaming table) should be cached in memory."),
 
     // Cross query related  (changes made by Raajay Viswanathan)
+    HIVE_CROSSQUERY_VERBOSE("hive.crossquery.verbose", false, "Control output of AST, QB and Query Plan"),
     HIVE_CROSSQUERY_EXTID("hive.crossquery.extid", "cross_query_default_id", "Unique string prefix for filename used for dumping AST and query plans"),
-    HIVE_CROSSQUERY_DUMPDIR("hive.crossquery.dumpdir", "", "Folder to dump the ast and query plans"),
+    HIVE_CROSSQUERY_DUMPDIR("hive.crossquery.dumpdir", "/tmp/crossquery", "Folder to write the ast and query plans"),
+    HIVE_CROSSQUERY_COMBINATION("hive.crossquery.combination", 0, "Integer code for the combination of rules that are active"),
+    HIVE_CROSSQUERY_ACTIVE("hive.crossquery.active", true, "Switch on lazy optimization for"),
 
     // CBO related
     HIVE_CBO_ENABLED("hive.cbo.enable", true, "Flag to control enabling Cost Based Optimizations using Calcite framework."),
