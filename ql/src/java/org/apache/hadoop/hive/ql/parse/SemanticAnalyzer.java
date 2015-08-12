@@ -23,6 +23,10 @@ import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVESTATSDBCLASS;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+//import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10120,24 +10124,43 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // 1. Generate Resolved Parse tree from syntax tree
     // This is a very complex function. Essentially, it does the following: traverses the AST to populate the data
     // structure (qb and with in it qbp). It identifies the different kinds of expressions like Join, GroupBy, etc..
-    // and maps them to their sub-ASTs. It also identifies the sub-queries, and points the query block to other
-    // sub-queries.
+    // and maps them to their sub-ASTs.
     LOG.info("Starting Semantic Analysis");
     if (!genResolvedParseTree(ast, plannerCtx)) {
       return;
     }
 
-    // 2. Gen OP Tree from resolved Parse Tree
+    LOG.debug("Print the QB and QBP before generating operator Tree");
     this.qb.printConsole();
+    // 2. Gen OP Tree from resolved Parse Tree
     Operator sinkOp = genOPTree(ast, plannerCtx);
+    LOG.debug("Print the QB and QBP after generating operator Tree");
     this.qb.printConsole();
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("SinkOp = " + sinkOp.toString());
-      HashMap<String, Operator<? extends OperatorDesc>> tmp = new LinkedHashMap<String, Operator<? extends OperatorDesc>>();
-      tmp.put(sinkOp.toString(), sinkOp);
-      LOG.debug("The full operator tree after GenOPTree\n" + Operator.toString(tmp.values()));
+      LOG.debug("The full operator tree after GenOPTree\n" + Operator.toString(this.topOps.values()));
     }
+
+    // Dump the operator tree immediately after generating it
+    if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
+            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".op_tree0";
+
+        java.nio.file.Path opTreeFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), opTreeFileName);
+
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(opTreeFile.getParent());
+          LOG.info("Writing operator tree from genOPTree to " + opTreeFile.toString());
+          PrintWriter opWriter = new PrintWriter(opTreeFile.toString(), "UTF-8");
+          opWriter.write(Operator.toString(this.topOps.values()));
+          opWriter.close();
+        } catch (Exception e) {
+          LOG.debug("Cannot open: " + opTreeFileName);
+        }
+    }
+
 
     // 3. Deduce Resultset Schema
     if (createVwDesc != null) {
@@ -10205,7 +10228,6 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       for(Operator op : pCtx.getTopOps().values()) {
         LOG.debug(" " + op.toString());
       }
-      LOG.debug("\n");
       LOG.debug("Before logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
     }
 
@@ -10217,6 +10239,25 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("After logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
+    }
+
+    // Dump the operator tree immediately after rule base optimization
+    if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
+            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".op_tree1";
+
+        java.nio.file.Path opTreeFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), opTreeFileName);
+
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(opTreeFile.getParent());
+          LOG.info("Writing operator tree after Optimize " + opTreeFile.toString());
+          PrintWriter opWriter = new PrintWriter(opTreeFile.toString(), "UTF-8");
+          opWriter.write(Operator.toString(this.topOps.values()));
+          opWriter.close();
+        } catch (Exception e) {
+          LOG.debug("Cannot open: " + opTreeFileName);
+        }
     }
 
     // 8. Generate column access stats if required - wait until column pruning
