@@ -10134,7 +10134,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("SinkOp = " + sinkOp.toString());
-      LOG.debug("The full operator tree after GenOPTree\n" + Operator.toString(sinkOp));
+      HashMap<String, Operator<? extends OperatorDesc>> tmp = new LinkedHashMap<String, Operator<? extends OperatorDesc>>();
+      tmp.put(sinkOp.toString(), sinkOp);
+      LOG.debug("The full operator tree after GenOPTree\n" + Operator.toString(tmp.values()));
     }
 
     // 3. Deduce Resultset Schema
@@ -10206,11 +10208,13 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       LOG.debug("\n");
       LOG.debug("Before logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
     }
+
     Optimizer optm = new Optimizer();
     optm.setPctx(pCtx);
     optm.initialize(conf);
     pCtx = optm.optimize();
     FetchTask origFetchTask = pCtx.getFetchTask();
+
     if (LOG.isDebugEnabled()) {
       LOG.debug("After logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
     }
