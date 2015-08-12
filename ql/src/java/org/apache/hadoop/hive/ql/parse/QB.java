@@ -105,13 +105,30 @@ public class QB {
 
   public void printConsole()
   {
-      System.out.println("Raajay - QB");
-      for (String alias : getSubqAliases()) {
-          QBExpr qbexpr = getSubqForAlias(alias);
-          System.out.println("start subquery " + alias);
-          qbexpr.printConsole();
-          System.out.println("end subquery " + alias);
-      }
+    LOG.debug("Query ID : " + id);
+    LOG.debug("Num Sub-queries : " + getSubqAliases().size());
+    LOG.debug("List of sub-queries");
+    int i = 0;
+    for(String alias : getSubqAliases()) {
+      LOG.debug("subq #" + ++i + " " + alias);
+    }
+
+    LOG.debug("List of table-alias");
+    i = 0;
+    for(String alias : getTabAliases()) {
+      LOG.debug("tab #" + ++i + " " + alias);
+    }
+    i = 0;
+    LOG.debug("List of clauses");
+    for(String dest : this.qbp.getClauseNames()) {
+      LOG.debug("clause #" + ++i + " " + dest);
+    }
+
+    LOG.debug("Write out information in QBParseInfo");
+    LOG.debug("Join Expression");
+    LOG.debug((this.qbp.getJoinExpr() == null) ? "null" : this.qbp.getJoinExpr().toStringTree());
+    LOG.debug("Hints");
+    LOG.debug((this.qbp.getHints() == null) ? "null" : this.qbp.getHints().toStringTree());
   }
 
   public QB() {

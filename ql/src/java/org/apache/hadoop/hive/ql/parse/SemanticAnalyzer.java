@@ -736,7 +736,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     Path dataDir = null;
     if(!qb.getEncryptedTargetTablePaths().isEmpty()) {
       //currently only Insert into T values(...) is supported thus only 1 values clause
-      //and only 1 target table are possible.  If/when support for 
+      //and only 1 target table are possible.  If/when support for
       //select ... from values(...) is added an insert statement may have multiple
       //encrypted target tables.
       dataDir = ctx.getMRTmpPath(qb.getEncryptedTargetTablePaths().get(0).toUri());
@@ -1556,7 +1556,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
       for (String alias : tabAliases) {
         String tab_name = qb.getTabNameForAlias(alias);
-        
+
         // we first look for this alias from CTE, and then from catalog.
         /*
          * if this s a CTE reference: Add its AST as a SubQuery to this QB.
@@ -10089,7 +10089,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         return;
       }
       for (Node child : node.getChildren()) {
-        //each insert of multi insert looks like 
+        //each insert of multi insert looks like
         //(TOK_INSERT (TOK_INSERT_INTO (TOK_TAB (TOK_TABNAME T1)))
         if (((ASTNode) child).getToken().getType() != HiveParser.TOK_INSERT) {
           continue;
@@ -10118,15 +10118,24 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   void analyzeInternal(ASTNode ast, PlannerContext plannerCtx) throws SemanticException {
     // 1. Generate Resolved Parse tree from syntax tree
+    // This is a very complex function. Essentially, it does the following: traverses the AST to populate the data
+    // structure (qb and with in it qbp). It identifies the different kinds of expressions like Join, GroupBy, etc..
+    // and maps them to their sub-ASTs. It also identifies the sub-queries, and points the query block to other
+    // sub-queries.
     LOG.info("Starting Semantic Analysis");
     if (!genResolvedParseTree(ast, plannerCtx)) {
       return;
     }
 
     // 2. Gen OP Tree from resolved Parse Tree
-    this.qb.print("Before genOPTree");
+    this.qb.printConsole();
     Operator sinkOp = genOPTree(ast, plannerCtx);
-    this.qb.print("After genOPTree");
+    this.qb.printConsole();
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("SinkOp = " + sinkOp.toString());
+      LOG.debug("The full operator tree after GenOPTree\n" + Operator.toString(sinkOp));
+    }
 
     // 3. Deduce Resultset Schema
     if (createVwDesc != null) {
@@ -10189,6 +10198,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     // 7. Perform Logical optimization
     if (LOG.isDebugEnabled()) {
+      LOG.debug("Number of top operators = " + pCtx.getTopOps().values().size());
+      LOG.debug("The top operators are: ");
+      for(Operator op : pCtx.getTopOps().values()) {
+        LOG.debug(" " + op.toString());
+      }
+      LOG.debug("\n");
       LOG.debug("Before logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
     }
     Optimizer optm = new Optimizer();
