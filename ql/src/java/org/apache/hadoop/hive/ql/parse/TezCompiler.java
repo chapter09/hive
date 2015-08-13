@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -129,6 +132,23 @@ public class TezCompiler extends TaskCompiler {
     // to take care of.
     runCycleAnalysisForPartitionPruning(procCtx, inputs, outputs);
 
+    // Dump the operator tree immediately after Operator Plan optimization in Tez compiler
+    if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".op_tree2";
+
+        java.nio.file.Path opTreeFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), opTreeFileName);
+
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(opTreeFile.getParent());
+          LOG.info("Writing operator tree after Optimize " + opTreeFile.toString());
+          PrintWriter opWriter = new PrintWriter(opTreeFile.toString(), "UTF-8");
+          opWriter.write(Operator.toString(pCtx.getTopOps().values()));
+          opWriter.close();
+        } catch (Exception e) {
+          LOG.debug("Cannot open: " + opTreeFileName);
+        }
+    }
   }
 
   private void runCycleAnalysisForPartitionPruning(OptimizeTezProcContext procCtx,

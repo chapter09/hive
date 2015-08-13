@@ -552,4 +552,5 @@ public abstract class Task<T extends Serializable> implements Serializable, Node
   public boolean equals(Object obj) {
     return toString().equals(String.valueOf(obj));
   }
+
 }

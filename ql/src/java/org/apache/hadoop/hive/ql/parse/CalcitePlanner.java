@@ -1005,8 +1005,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
       // raajay - dump the optimized plan
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
-            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".opt_plan";
+        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".opt_plan";
         Path optASTFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), optASTFileName);
         try {
           LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));

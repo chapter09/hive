@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.hive.ql.exec.tez;
 
+import java.io.Serializable;
+import java.lang.StringBuilder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -500,4 +502,49 @@ public class TezTask extends Task<TezWork> {
 
     return ((ReduceWork)children.get(0)).getReducer();
   }
+
+  public String toStringDetailed() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("\nTask Id (toString) " + this.getId() + "," + this.toString());
+    sb.append("\nWork adjacency map:");
+    if(this.getWork() != null) {
+      for(BaseWork b : this.getWork().getAllWorkUnsorted()) {
+        sb.append("\n\t" + b.getName() + " : ");
+        for(BaseWork c : this.getWork().getChildren(b)) {
+          sb.append(" " + c.getName());
+        }
+      }
+    }
+    sb.append("\nWork operator info:");
+    if(this.getWork() != null) {
+      for(BaseWork b : this.getWork().getAllWorkUnsorted()) {
+        sb.append("\n\t" + b.getName() + " : ");
+        for(Operator<?> op : b.getAllOperators()) {
+          sb.append(" " + op.getOperatorId());
+        }
+      }
+    }
+
+    int parentsize = (this.getParentTasks() == null) ? 0 : this.getParentTasks().size();
+    sb.append("\nParent Task details (" + parentsize + ") :");
+//    for(Task<? extends Serializable> t : this.getParentTasks()) {
+//      if(t instanceof TezTask)
+//        sb.append(" " + t.getId());
+//    }
+
+    int childrensize =  (this.getChildTasks() == null) ? 0 : this.getChildTasks().size();
+    sb.append("\nChildren details ("+this.getChildTasks().size()+"):");
+//    for(Task<? extends Serializable> t : this.getChildTasks()) {
+//      if(t instanceof TezTask)
+//        sb.append(" " + t.getId());
+//    }
+
+//    for(Task<? extends Serializable> t : this.getChildTasks()) {
+//      if(t instanceof TezTask) {
+//        sb.append(((TezTask) t).toStringDetailed());
+//      }
+//    }
+    return sb.toString();
+  }
+
 }

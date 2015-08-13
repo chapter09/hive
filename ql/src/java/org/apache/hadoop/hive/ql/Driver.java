@@ -408,7 +408,7 @@ public class Driver implements CommandProcessor {
 
       // raajay
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String astDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".ast_parse";
+        String astDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".ast_parse";
         Path astDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), astDumpFileName);
         LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
         Files.createDirectories(astDumpFile.getParent());
@@ -500,7 +500,7 @@ public class Driver implements CommandProcessor {
 
       // raajay
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" + queryId + ".queryplan";
+        String qpDumpFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".queryplan";
         Path qpDumpFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), qpDumpFileName);
         LOG.info("Create directory: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
         Files.createDirectories(qpDumpFile.getParent());

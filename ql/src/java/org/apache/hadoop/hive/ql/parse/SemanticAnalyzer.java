@@ -92,6 +92,7 @@ import org.apache.hadoop.hive.ql.exec.SMBMapJoinOperator;
 import org.apache.hadoop.hive.ql.exec.SelectOperator;
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
 import org.apache.hadoop.hive.ql.exec.Task;
+import org.apache.hadoop.hive.ql.exec.tez.TezTask;
 import org.apache.hadoop.hive.ql.exec.TaskFactory;
 import org.apache.hadoop.hive.ql.exec.UnionOperator;
 import org.apache.hadoop.hive.ql.exec.Utilities;
@@ -148,6 +149,7 @@ import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowFrameSpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowFunctionSpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowSpec;
 import org.apache.hadoop.hive.ql.plan.AggregationDesc;
+import org.apache.hadoop.hive.ql.plan.BaseWork;
 import org.apache.hadoop.hive.ql.plan.CreateTableDesc;
 import org.apache.hadoop.hive.ql.plan.CreateTableLikeDesc;
 import org.apache.hadoop.hive.ql.plan.CreateViewDesc;
@@ -10144,8 +10146,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     // Dump the operator tree immediately after generating it
     if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
-            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".op_tree0";
+        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".op_tree0";
 
         java.nio.file.Path opTreeFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), opTreeFileName);
 
@@ -10241,10 +10242,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       LOG.debug("After logical optimization\n" + Operator.toString(pCtx.getTopOps().values()));
     }
 
-    // Dump the operator tree immediately after rule base optimization
+    // Dump the operator tree immediately after rule based optimization
     if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + "_" +
-            conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_COMBINATION)+ ".op_tree1";
+        String opTreeFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".op_tree1";
 
         java.nio.file.Path opTreeFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), opTreeFileName);
 
@@ -10270,6 +10270,13 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       setColumnAccessInfo(columnAccessAnalyzer.analyzeColumnAccess());
     }
 
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("Number of rootTasks before compile = " + rootTasks.size() + ". They are: ");
+      for(Task t : rootTasks) {
+        LOG.debug(t.getId());
+      }
+    }
+
     // 9. Optimize Physical op tree & Translate to target execution engine (MR,
     // TEZ..)
     if (!ctx.getExplainLogical()) {
@@ -10278,7 +10285,19 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       compiler.compile(pCtx, rootTasks, inputs, outputs);
       fetchTask = pCtx.getFetchTask();
     }
+
     LOG.info("Completed plan generation");
+
+    // Display the tez tasks to which operator trees are compiled to
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("Number of rootTasks (TEZ) after compile = " + Utilities.getTezTasks(rootTasks).size() + ". They are: ");
+      int i = 0;
+      for(TezTask t : Utilities.getTezTasks(rootTasks)) {
+        LOG.debug(t.toStringDetailed());
+      }
+      LOG.debug("FetchTask = " + ((fetchTask == null) ? "None" : fetchTask.getId()));
+      LOG.debug("FetchTask (toString) = " + ((fetchTask == null) ? "None" : fetchTask.toString()));
+    }
 
     // 10. put accessed columns to readEntity
     if (HiveConf.getBoolVar(this.conf, HiveConf.ConfVars.HIVE_STATS_COLLECT_SCANCOLS)) {
