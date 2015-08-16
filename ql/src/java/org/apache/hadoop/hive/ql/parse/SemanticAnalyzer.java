@@ -10287,6 +10287,27 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     LOG.info("Completed plan generation");
+    LOG.info("HIVE_CROSSQUERY_VERBOSE = " + conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE));
+
+    // Dump the work information in each Tez Task
+    if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String taskFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".work";
+        java.nio.file.Path taskFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), taskFileName);
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(taskFile.getParent());
+          LOG.info("Writing the work description in each of the root Tez tasks: " + taskFile.toString());
+          PrintWriter opWriter = new PrintWriter(taskFile.toString(), "UTF-8");
+          int i = 0;
+          for(TezTask t : Utilities.getTezTasks(rootTasks)) {
+            opWriter.write("Root task-" + ++i + "\n");
+            opWriter.write(t.toStringDetailed());
+          }
+          opWriter.close();
+        } catch (Exception e) {
+          LOG.error("Cannot open: " + taskFileName);
+        }
+    }
 
     // Display the tez tasks to which operator trees are compiled to
     if(LOG.isDebugEnabled()) {

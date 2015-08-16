@@ -506,7 +506,7 @@ public class TezTask extends Task<TezWork> {
   public String toStringDetailed() {
     StringBuilder sb = new StringBuilder();
     sb.append("\nTask Id (toString) " + this.getId() + "," + this.toString());
-    sb.append("\nWork adjacency map:");
+    sb.append("\nBaseWork adjacency map:");
     if(this.getWork() != null) {
       for(BaseWork b : this.getWork().getAllWorkUnsorted()) {
         sb.append("\n\t" + b.getName() + " : ");
@@ -515,7 +515,7 @@ public class TezTask extends Task<TezWork> {
         }
       }
     }
-    sb.append("\nWork operator info:");
+    sb.append("\nBaseWork operator info:");
     if(this.getWork() != null) {
       for(BaseWork b : this.getWork().getAllWorkUnsorted()) {
         sb.append("\n\t" + b.getName() + " : ");
