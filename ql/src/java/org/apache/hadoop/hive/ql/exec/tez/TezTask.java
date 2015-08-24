@@ -18,12 +18,12 @@
 
 package org.apache.hadoop.hive.ql.exec.tez;
 
-import java.io.Serializable;
-import java.lang.StringBuilder;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +97,23 @@ public class TezTask extends Task<TezWork> {
     return counters;
   }
 
+  public void DisplayDAG(DAG dag, PrintWriter pw) {
+    //TODO: get the running time for vertex and edges
+    pw.write("# printing the logical dag in our format");
+    // Obtain the vertices from DAG
+    Map<String, Vertex> vertex_names = new HashMap<String, Vertex>();
+    for(Vertex v : dag.getVertices()) {
+      pw.write("Vertex:" + v.getName() + "\n");
+      vertex_names.put(v.getName(), v);
+    }
+    // iterate through the vertices 
+    for (Vertex src: dag.getVertices()) {
+      for(Vertex dst : src.getOutputVertices()) {
+        pw.write("Edge:" + src.getName() + ":" + dst.getName() + "\n");
+      }
+    }
+  }
+
   @Override
   public int execute(DriverContext driverContext) {
     int rc = 1;
@@ -157,6 +174,13 @@ public class TezTask extends Task<TezWork> {
 
       // next we translate the TezWork to a Tez DAG
       DAG dag = build(jobConf, work, scratchDir, appJarLr, additionalLr, ctx);
+      // TODO: use the conf variables to control display
+//      if(true) {
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        // TODO: Initialize the print writer using configuration variables
+        PrintWriter pw = new PrintWriter();
+        DisplayDAG(dag, pw);
+      }
 
       // Add the extra resources to the dag
       addExtraResourcesToDag(session, dag, inputOutputJars, inputOutputLocalResources);
