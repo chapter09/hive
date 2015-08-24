@@ -19,6 +19,8 @@
 package org.apache.hadoop.hive.ql.exec.tez;
 
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -108,6 +110,7 @@ public class TezTask extends Task<TezWork> {
     }
     // iterate through the vertices 
     for (Vertex src: dag.getVertices()) {
+        // iterate through the outgoing edges
       for(Vertex dst : src.getOutputVertices()) {
         pw.write("Edge:" + src.getName() + ":" + dst.getName() + "\n");
       }
@@ -174,12 +177,22 @@ public class TezTask extends Task<TezWork> {
 
       // next we translate the TezWork to a Tez DAG
       DAG dag = build(jobConf, work, scratchDir, appJarLr, additionalLr, ctx);
-      // TODO: use the conf variables to control display
-//      if(true) {
+
+      // display the dag generated in out format; we have to tag it too
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
         // TODO: Initialize the print writer using configuration variables
-        PrintWriter pw = new PrintWriter();
-        DisplayDAG(dag, pw);
+        String dagFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".dag";
+        java.nio.file.Path dagFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), dagFileName);
+        try {
+            LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+            Files.createDirectories(dagFile.getParent());
+            LOG.info("Writing DAG description for DAGs generated per query: " + dagFile.toString());
+            PrintWriter pw = new PrintWriter(dagFile.toString(), "UTF-8");
+            DisplayDAG(dag, pw);
+
+        } catch (Exception e) {
+            LOG.error("Cannot open: " + dagFileName);
+        }
       }
 
       // Add the extra resources to the dag
