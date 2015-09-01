@@ -1013,8 +1013,8 @@ public class CalcitePlanner extends SemanticAnalyzer {
           LOG.info("Writing CBO optimized plan " + optASTFile.toString());
           PrintWriter optWriter = new PrintWriter(optASTFile.toString(), "UTF-8");
           optWriter.write(RelOptUtil.toString(calciteOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
-          optWriter.write("\nRow Count = " + RelMetadataQuery.getRowCount(calciteOptimizedPlan).toString());
-          optWriter.write("\nCumulative Cost = " + RelMetadataQuery.getCumulativeCost(calciteOptimizedPlan).toString());
+//          optWriter.write("\nRow Count = " + RelMetadataQuery.getRowCount(calciteOptimizedPlan).toString());
+//          optWriter.write("\nCumulative Cost = " + RelMetadataQuery.getCumulativeCost(calciteOptimizedPlan).toString());
           optWriter.close();
         } catch (Exception e) {
           LOG.debug("Cannot open: " + optASTFileName);

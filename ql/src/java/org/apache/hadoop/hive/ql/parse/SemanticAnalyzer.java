@@ -10134,6 +10134,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     LOG.debug("Print the QB and QBP before generating operator Tree");
     this.qb.printConsole();
+
     // 2. Gen OP Tree from resolved Parse Tree
     Operator sinkOp = genOPTree(ast, plannerCtx);
     LOG.debug("Print the QB and QBP after generating operator Tree");
