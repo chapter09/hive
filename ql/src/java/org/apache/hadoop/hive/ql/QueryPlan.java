@@ -195,6 +195,7 @@ public class QueryPlan implements Serializable {
       operator.setOperatorId(op.getOperatorId());
       operator.setOperatorType(op.getType());
       task.addToOperatorList(operator);
+      LOG.info("Done processing the operator");
       // done processing the operator
       if (op.getChildOperators() != null) {
         org.apache.hadoop.hive.ql.plan.api.Adjacency entry =
@@ -267,6 +268,8 @@ public class QueryPlan implements Serializable {
         stage.addToTaskList(otherTask);
       }
       if (task instanceof ConditionalTask) {
+        LOG.info("Populate Query Plan: Observed conditional Task");
+
         org.apache.hadoop.hive.ql.plan.api.Adjacency listEntry =
           new org.apache.hadoop.hive.ql.plan.api.Adjacency();
         listEntry.setAdjacencyType(AdjacencyType.DISJUNCTIVE);
@@ -296,6 +299,7 @@ public class QueryPlan implements Serializable {
         }
         query.getStageGraph().addToAdjacencyList(listEntry);
       } else if (task.getChildTasks() != null) {
+        LOG.info("Populate Query Plan: Observed normal Task");
         org.apache.hadoop.hive.ql.plan.api.Adjacency entry =
           new org.apache.hadoop.hive.ql.plan.api.Adjacency();
         entry.setAdjacencyType(AdjacencyType.CONJUNCTIVE);

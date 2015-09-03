@@ -1497,6 +1497,23 @@ public class Driver implements CommandProcessor {
       DriverContext driverCxt = new DriverContext(ctx);
       driverCxt.prepare(plan);
 
+      // Dump the work information in each Tez Task
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+          String fName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".splan";
+          java.nio.file.Path fPath = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
+          try {
+            LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+            Files.createDirectories(fPath.getParent());
+            LOG.info("Writing the serialized Query Plan: " + fPath.toString());
+            PrintWriter opWriter = new PrintWriter(fPath.toString(), "UTF-8");
+//            opWriter.write(plan.toThriftJSONString());
+            opWriter.write(plan.toBinaryString());
+            opWriter.close();
+          } catch (Exception e) {
+            LOG.error("Cannot open: " + fName);
+          }
+      }
+
       ctx.setHDFSCleanup(true);
 
       this.driverCxt = driverCxt; // for canceling the query (should be bound to session?)
