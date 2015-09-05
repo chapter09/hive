@@ -20,9 +20,11 @@ package org.apache.hadoop.hive.ql;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1504,11 +1506,19 @@ public class Driver implements CommandProcessor {
           try {
             LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
             Files.createDirectories(fPath.getParent());
-            LOG.info("Writing the serialized Query Plan: " + fPath.toString());
-            PrintWriter opWriter = new PrintWriter(fPath.toString(), "UTF-8");
+//            LOG.info("Writing the serialized Query Plan: " + fPath.toString());
+//
+//            FileOutputStream op_stream = new FileOutputStream(fPath.toString());
+//            Utilities.serializePlan(plan, op_stream, conf);
+//            op_stream.close();
+//
+//            FileInputStream in_stream = new FileInputStream(fPath.toString());
+//            Utilities.deserializePlan(in_stream, QueryPlan.class, conf);
+//            in_stream.close();
+//            PrintWriter opWriter = new PrintWriter(fPath.toString(), "UTF-8");
 //            opWriter.write(plan.toThriftJSONString());
-            opWriter.write(plan.toBinaryString());
-            opWriter.close();
+//            opWriter.write(plan.toBinaryString());
+//            opWriter.close();
           } catch (Exception e) {
             LOG.error("Cannot open: " + fName);
           }

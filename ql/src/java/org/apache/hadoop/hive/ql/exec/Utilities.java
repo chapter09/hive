@@ -18,8 +18,6 @@
 
 package org.apache.hadoop.hive.ql.exec;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.beans.DefaultPersistenceDelegate;
 import java.beans.Encoder;
 import java.beans.ExceptionListener;
@@ -33,15 +31,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -82,7 +85,6 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import org.antlr.runtime.CommonToken;
-import org.apache.calcite.util.ChunkList;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
@@ -363,6 +365,7 @@ public final class Utilities {
   public static void setBaseWork(Configuration conf, String name, BaseWork work) {
     Path path = getPlanPath(conf, name);
     gWorkMap.get().put(path, work);
+    LOG.info("Raajay: In setBaseWork: dump the work into a dictionary with key = " + path);
   }
 
   /**
@@ -684,6 +687,7 @@ public final class Utilities {
   }
 
   public static Path setMapWork(Configuration conf, MapWork w, Path hiveScratchDir, boolean useCache) {
+    LOG.info("Raajay: in setMapWork");
     return setBaseWork(conf, w, hiveScratchDir, MAP_PLAN_NAME, useCache);
   }
 
@@ -700,6 +704,7 @@ public final class Utilities {
       OutputStream out = null;
 
       if (HiveConf.getBoolVar(conf, ConfVars.HIVE_RPC_QUERY_PLAN)) {
+        LOG.info("Raajay: we are using HIVE_RPC_QUERY_PLAN = True");
         // add it to the conf
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
@@ -710,9 +715,36 @@ public final class Utilities {
         } finally {
           IOUtils.closeStream(out);
         }
-        LOG.info("Setting plan: "+planPath.toUri().getPath());
+
+        // TODO: should display map work
+        // Using javaXML does not work
+        if("kryo".equals(HiveConf.getVar(conf, ConfVars.PLAN_SERIALIZATION))) {
+          LOG.info("Raajay: the plan (Kryo) is" );
+          if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+            String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + w.getName() +  ".kryo";
+            java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
+            try {
+              LOG.info("Create directory if it does not exist: " + HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+              Files.createDirectories(fPath.getParent());
+              LOG.info("Writing the BaseWork: " + fPath.toString());
+              FileOutputStream op_stream = new FileOutputStream(fPath.toString());
+              serializePlan(w, op_stream, conf);
+              op_stream.close();
+
+              FileInputStream in_stream = new FileInputStream(fPath.toString());
+              Utilities.deserializePlan(in_stream, ReduceWork.class, conf);
+              in_stream.close();
+
+            } catch (Exception e) {
+              LOG.error("Kryo writing went wrong " + fName);
+            }
+          }
+        }
+
+        LOG.info("Setting plan to conf variable : " + planPath.toUri().getPath());
         conf.set(planPath.toUri().getPath(),
             Base64.encodeBase64String(byteOut.toByteArray()));
+
       } else {
         // use the default file system of the conf
         FileSystem fs = planPath.getFileSystem(conf);
@@ -724,6 +756,8 @@ public final class Utilities {
         } finally {
           IOUtils.closeStream(out);
         }
+
+        // let us dump the plan once more
 
         // Serialize the plan to the default hdfs instance
         // Except for hadoop local mode execution where we should be
@@ -746,6 +780,7 @@ public final class Utilities {
       // Cache the plan in this process
       gWorkMap.get().put(planPath, w);
       return planPath;
+
     } catch (Exception e) {
       String msg = "Error caching " + name + ": " + e;
       LOG.error(msg, e);
@@ -765,10 +800,13 @@ public final class Utilities {
     if (getPlanPath(conf) == null) {
       // this is the unique conf ID, which is kept in JobConf as part of the plan file name
       String jobID = UUID.randomUUID().toString();
+      LOG.info("Raajay: Created random jobID = " + jobID);
       Path planPath = new Path(hiveScratchDir, jobID);
       FileSystem fs = planPath.getFileSystem(conf);
       fs.mkdirs(planPath);
+      LOG.info("Raajay: Created directory in hiveScratchDir  = " + planPath);
       HiveConf.setVar(conf, HiveConf.ConfVars.PLAN, planPath.toUri().toString());
+      LOG.info("Raajay: Set variable PLAN in JobConf to = " + planPath.toUri().toString());
     }
   }
 
@@ -940,14 +978,19 @@ public final class Utilities {
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.SERIALIZE_PLAN);
     String serializationType = conf.get(HiveConf.ConfVars.PLAN_SERIALIZATION.varname, "kryo");
     LOG.info("Serializing " + plan.getClass().getSimpleName() + " via " + serializationType);
+
     if("javaXML".equalsIgnoreCase(serializationType)) {
+      LOG.info("Raajay: Serializing using JAVA-XML");
       serializeObjectByJavaXML(plan, out);
     } else {
       if(cloningPlan) {
+        LOG.info("Raajay: Cloning using kryo");
         serializeObjectByKryo(cloningQueryPlanKryo.get(), plan, out);
       } else {
+        LOG.info("Raajay: Serializing using kryo");
         serializeObjectByKryo(runtimeSerializationKryo.get(), plan, out);
       }
+
     }
     perfLogger.PerfLogEnd(CLASS_NAME, PerfLogger.SERIALIZE_PLAN);
   }
@@ -988,6 +1031,15 @@ public final class Utilities {
    */
   public static <T> T deserializePlan(InputStream in, Class<T> planClass, Configuration conf) {
     return deserializePlan(in, planClass, conf, false);
+  }
+
+  /**
+   * Raajay's custom de-serialization
+   */
+  public static <T> T deserializePlan(InputStream in, Class<T> planClass) {
+    T plan;
+    plan = deserializeObjectByKryo(runtimeSerializationKryo.get(), in, planClass);
+    return plan;
   }
 
   /**
@@ -3691,6 +3743,7 @@ public final class Utilities {
           Path tempPath = Utilities.toTempPath(tempDir);
           FileSystem fs = tempPath.getFileSystem(conf);
           fs.mkdirs(tempPath);
+          LOG.info("Raajay: tempDir created " + tempPath);
         }
       }
 

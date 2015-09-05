@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.hive.ql.exec.tez;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.Set;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.Context;
 import org.apache.hadoop.hive.ql.DriverContext;
 import org.apache.hadoop.hive.ql.exec.Operator;
@@ -108,7 +110,7 @@ public class TezTask extends Task<TezWork> {
       pw.write("Vertex:" + v.getName() + "\n");
       vertex_names.put(v.getName(), v);
     }
-    // iterate through the vertices 
+    // iterate through the vertices
     for (Vertex src: dag.getVertices()) {
         // iterate through the outgoing edges
       for(Vertex dst : src.getOutputVertices()) {
@@ -175,12 +177,61 @@ public class TezTask extends Task<TezWork> {
       // localize hive-exec.jar as well.
       LocalResource appJarLr = session.getAppJarLr();
 
+      LOG.info("Parameters sent to build DAG");
+      if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + work.getName() +  ".tezwork";
+        java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
+        try {
+
+          LOG.info("TezWork: Serializing tez work to : " + HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(fPath.getParent());
+          LOG.info("Raajay: Writing the TezWork " + fPath.toString());
+          FileOutputStream op_stream = new FileOutputStream(fPath.toString());
+          Utilities.serializePlan(work, op_stream, conf);
+          op_stream.close();
+
+          FileInputStream in_stream = new FileInputStream(fPath.toString());
+          Utilities.deserializePlan(in_stream, TezWork.class, conf);
+          in_stream.close();
+
+        } catch (Exception e) {
+          LOG.error("Raajay: Kryo writing went wrong " + fName);
+          LOG.error("Raajay: " + e.getMessage());
+        }
+      }
+
+      if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + work.getName() +  ".conf.xml";
+        java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
+        try {
+          LOG.info("Raajay: Writing jobConf to " + fPath.toString());
+          FileOutputStream op_stream = new FileOutputStream(fPath.toString());
+          jobConf.writeXml(op_stream);
+          op_stream.close();
+        } catch (Exception e) {
+          LOG.error("Raajay: Writing jobConf went wrong " + fName);
+          LOG.error("Raajay: " + e.getMessage());
+        }
+      }
+
+      LOG.info("Raajay: scratchDir = " + scratchDir);
+      LOG.info("Raajay: appJarLr = " + appJarLr);
+      LOG.info("Raajay: additionalLr");
+
+      int i = 0;
+      for(LocalResource lr: additionalLr) {
+        LOG.info("Raajay: additionalLr-" + ++i + lr);
+      }
+      //TODO: convert every LocalResource to LocalResourceProto and then store it. Later we can read the proto and
+      //convert it to local resource
+
+      LOG.info("Raajay: ctx = " + ctx.toString());
+
       // next we translate the TezWork to a Tez DAG
       DAG dag = build(jobConf, work, scratchDir, appJarLr, additionalLr, ctx);
 
       // display the dag generated in out format; we have to tag it too
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        // TODO: Initialize the print writer using configuration variables
         String dagFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".dag";
         java.nio.file.Path dagFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), dagFileName);
         try {
@@ -309,6 +360,7 @@ public class TezTask extends Task<TezWork> {
     }
   }
 
+  // TODO: double check if any member fields are used
   DAG build(JobConf conf, TezWork work, Path scratchDir,
       LocalResource appJarLr, List<LocalResource> additionalLr, Context ctx)
       throws Exception {

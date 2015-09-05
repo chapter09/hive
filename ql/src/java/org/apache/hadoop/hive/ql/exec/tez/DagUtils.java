@@ -422,12 +422,15 @@ public class DagUtils {
    * container size isn't set.
    */
   public static Resource getContainerResource(Configuration conf) {
+
     int memory = HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVETEZCONTAINERSIZE) > 0 ?
       HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVETEZCONTAINERSIZE) :
       conf.getInt(MRJobConfig.MAP_MEMORY_MB, MRJobConfig.DEFAULT_MAP_MEMORY_MB);
+
     int cpus = HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVETEZCPUVCORES) > 0 ?
       HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVETEZCPUVCORES) :
       conf.getInt(MRJobConfig.MAP_CPU_VCORES, MRJobConfig.DEFAULT_MAP_CPU_VCORES);
+
     return Resource.newInstance(memory, cpus);
   }
 
@@ -526,13 +529,27 @@ public class DagUtils {
       Path mrScratchDir, Context ctx, VertexType vertexType)
       throws Exception {
 
+    LOG.info("Raajay: In Create Vertex for Map Work");
+    LOG.info("Raajay: [MapWork] mapWork = " + mapWork.toString());
+    LOG.info("Raajay: [LocalResource] appJarLr = " + appJarLr.toString());
+    int i = 0;
+    for(LocalResource lr: additionalLr) {
+      LOG.info("Raajay: [List<LocalResource>] additionalLr-" + ++i + lr);
+    }
+    LOG.info("Raajay: [FileSystem] fileSystem = " + fs.toString());
+    LOG.info("Raajay: [Path] mrScratchDir = " + mrScratchDir);
+    LOG.info("Raajay: [VertexType]vertexType = " + vertexType);
+
     Path tezDir = getTezDir(mrScratchDir);
+    LOG.info("Raajay: [Path]tezDir = " + tezDir);
 
     // set up the operator plan
     Utilities.cacheMapWork(conf, mapWork, mrScratchDir);
+    LOG.info("Raajay: Caching of MapWork done.");
 
     // create the directories FileSinkOperators need
     Utilities.createTmpDirs(conf, mapWork);
+    LOG.info("Raajay: Creating tmp directories in MapWork done.");
 
     // finally create the vertex
     Vertex map = null;
@@ -546,6 +563,8 @@ public class DagUtils {
     @SuppressWarnings("rawtypes")
     Class inputFormatClass = conf.getClass("mapred.input.format.class",
         InputFormat.class);
+
+    LOG.info("Raajay: [Class]inputFormatClass = " + inputFormatClass);
 
     boolean vertexHasCustomInput = VertexType.isCustomInputType(vertexType);
     LOG.info("Vertex has custom input? " + vertexHasCustomInput);
@@ -573,6 +592,7 @@ public class DagUtils {
       // prepare the tmp output directory. The output tmp directory should
       // exist before jobClose (before renaming after job completion)
       Path tempOutPath = Utilities.toTempPath(outputPath);
+      LOG.info("Raajay: mapWork is of type MergeFileWork. Creating additonal temp dirs " + tempOutPath);
       try {
         if (!fs.exists(tempOutPath)) {
           fs.mkdirs(tempOutPath);
@@ -585,11 +605,15 @@ public class DagUtils {
 
     // remember mapping of plan to input
     conf.set(Utilities.INPUT_NAME, mapWork.getName());
+
     if (HiveConf.getBoolVar(conf, ConfVars.HIVE_AM_SPLIT_GENERATION)
         && !mapWork.isUseOneNullRowInputFormat()) {
 
+      LOG.info("Raajay: HIVE_AM_SPLIT_GENERATION is true");
+
       // set up the operator plan. (before setting up splits on the AM)
       Utilities.setMapWork(conf, mapWork, mrScratchDir, false);
+      LOG.info("Setup MapWork before split");
 
       // if we're generating the splits in the AM, we just need to set
       // the correct plugin.
@@ -611,38 +635,64 @@ public class DagUtils {
       }
     } else {
       // Setup client side split generation.
+      LOG.info("Raajay: setting up client side split generation");
       dataSource = MRInputHelpers.configureMRInputWithLegacySplitGeneration(conf, new Path(tezDir,
           "split_" + mapWork.getName().replaceAll(" ", "_")), true);
       numTasks = dataSource.getNumberOfShards();
+      LOG.info("Raajay: number of tasks is decided as (number of shards) " + numTasks);
 
       // set up the operator plan. (after generating splits - that changes configs)
       Utilities.setMapWork(conf, mapWork, mrScratchDir, false);
+      LOG.info("Raajay: setMapWork done");
+
     }
 
     UserPayload serializedConf = TezUtils.createUserPayloadFromConf(conf);
+    LOG.info("Raajay: [UserPayload] serializedConf = " + serializedConf.toString());
+
     String procClassName = MapTezProcessor.class.getName();
+
     if (mapWork instanceof MergeFileWork) {
       procClassName = MergeFileTezProcessor.class.getName();
     }
+    LOG.info("Raajay: [String]procClassName = " + procClassName);
+
+    LOG.info("Raajay: create a new vertex");
+    LOG.info("Raajay: String vertexName = " + mapWork.getName());
+    LOG.info("Raajay: ProcessorDescriptor processorDescriptor = " + ProcessorDescriptor.create(procClassName));
+    LOG.info("Raajay: UserPayload userPayLoad of ProcessDescriptor = " + serializedConf);
+    LOG.info("Raajay: int numTasks = " + numTasks);
+    LOG.info("Raajay: Resource taskResource (CPU, memory) = " + getContainerResource(conf));
+
     map = Vertex.create(mapWork.getName(), ProcessorDescriptor.create(procClassName)
         .setUserPayload(serializedConf), numTasks, getContainerResource(conf));
 
     map.setTaskEnvironment(getContainerEnvironment(conf, true));
+
+    LOG.info("Raajay: Writing Container environment");
+    Map<String, String> gce = getContainerEnvironment(conf, true);
+    for(String k: gce.keySet()) {
+      LOG.info("Raajay: key = " + k + ", value=" + gce.get(k));
+    }
+
     map.setTaskLaunchCmdOpts(getContainerJavaOpts(conf));
+    LOG.info("Raajay: javaOpts = " + getContainerJavaOpts(conf));
 
     assert mapWork.getAliasToWork().keySet().size() == 1;
 
     // Add the actual source input
     String alias = mapWork.getAliasToWork().keySet().iterator().next();
     map.addDataSource(alias, dataSource);
+    LOG.info("Raajay: [DataSourceDescriptor] dataSource added " + dataSource.toString());
+
 
     Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
     localResources.put(getBaseName(appJarLr), appJarLr);
     for (LocalResource lr: additionalLr) {
       localResources.put(getBaseName(lr), lr);
     }
-
     map.addTaskLocalFiles(localResources);
+    LOG.info("Raajay: More local resources");
     return map;
   }
 
