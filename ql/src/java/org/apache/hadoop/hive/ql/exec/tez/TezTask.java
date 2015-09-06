@@ -58,6 +58,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.yarn.api.records.URL;
 import org.apache.tez.common.counters.CounterGroup;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
@@ -119,6 +120,20 @@ public class TezTask extends Task<TezWork> {
     }
   }
 
+  private String convertLrToString(LocalResource lr) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("size:|" + lr.getSize() + "|");
+    sb.append("type:|" + lr.getType() + "|");
+    sb.append("timestamp:|" + lr.getTimestamp() + "|");
+    sb.append("visibility:|" + lr.getVisibility() + "|");
+    URL url = lr.getResource();
+    sb.append("scheme:|" + url.getScheme() + "|");
+    sb.append("host:|" + url.getHost() + "|");
+    sb.append("port:|" + url.getPort() + "|");
+    sb.append("file:|" + url.getFile());
+    return sb.toString();
+  }
+
   @Override
   public int execute(DriverContext driverContext) {
     int rc = 1;
@@ -177,9 +192,9 @@ public class TezTask extends Task<TezWork> {
       // localize hive-exec.jar as well.
       LocalResource appJarLr = session.getAppJarLr();
 
-      LOG.info("Parameters sent to build DAG");
+      LOG.info("Raajay: Parameters sent to build DAG");
       if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + work.getName() +  ".tezwork";
+        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + ".tezwork";
         java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
         try {
 
@@ -201,7 +216,7 @@ public class TezTask extends Task<TezWork> {
       }
 
       if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + work.getName() +  ".conf.xml";
+        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + ".conf.xml";
         java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
         try {
           LOG.info("Raajay: Writing jobConf to " + fPath.toString());
@@ -214,18 +229,24 @@ public class TezTask extends Task<TezWork> {
         }
       }
 
-      LOG.info("Raajay: scratchDir = " + scratchDir);
-      LOG.info("Raajay: appJarLr = " + appJarLr);
-      LOG.info("Raajay: additionalLr");
-
-      int i = 0;
-      for(LocalResource lr: additionalLr) {
-        LOG.info("Raajay: additionalLr-" + ++i + lr);
+      if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + ".resources.txt";
+        java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
+        try {
+          LOG.info("Raajay: Writing resources (and scratchDir info) to " + fPath.toString());
+          PrintWriter op_stream = new PrintWriter(fPath.toString(), "UTF-8");
+          op_stream.write("scratchDir->" + scratchDir + "\n");
+          op_stream.write("appJarLr->" + convertLrToString(appJarLr) + "\n");
+          for(LocalResource lr: additionalLr) {
+            op_stream.write("additionalLr" + "->" + convertLrToString(lr) + "\n");
+          }
+          op_stream.write("ctx(never used)->" + ctx.toString() + "\n");
+          op_stream.close();
+        } catch (Exception e) {
+          LOG.error("Raajay: Writing local resources and scratchDir went wrong " + fName);
+          LOG.error("Raajay: " + e.getMessage());
+        }
       }
-      //TODO: convert every LocalResource to LocalResourceProto and then store it. Later we can read the proto and
-      //convert it to local resource
-
-      LOG.info("Raajay: ctx = " + ctx.toString());
 
       // next we translate the TezWork to a Tez DAG
       DAG dag = build(jobConf, work, scratchDir, appJarLr, additionalLr, ctx);
@@ -361,7 +382,7 @@ public class TezTask extends Task<TezWork> {
   }
 
   // TODO: double check if any member fields are used
-  DAG build(JobConf conf, TezWork work, Path scratchDir,
+  public DAG build(JobConf conf, TezWork work, Path scratchDir,
       LocalResource appJarLr, List<LocalResource> additionalLr, Context ctx)
       throws Exception {
 

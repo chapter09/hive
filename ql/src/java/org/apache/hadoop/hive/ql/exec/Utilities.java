@@ -716,31 +716,6 @@ public final class Utilities {
           IOUtils.closeStream(out);
         }
 
-        // TODO: should display map work
-        // Using javaXML does not work
-        if("kryo".equals(HiveConf.getVar(conf, ConfVars.PLAN_SERIALIZATION))) {
-          LOG.info("Raajay: the plan (Kryo) is" );
-          if(HiveConf.getBoolVar(conf, ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-            String fName = HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_EXTID) + w.getName() +  ".kryo";
-            java.nio.file.Path fPath = Paths.get(HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
-            try {
-              LOG.info("Create directory if it does not exist: " + HiveConf.getVar(conf, ConfVars.HIVE_CROSSQUERY_DUMPDIR));
-              Files.createDirectories(fPath.getParent());
-              LOG.info("Writing the BaseWork: " + fPath.toString());
-              FileOutputStream op_stream = new FileOutputStream(fPath.toString());
-              serializePlan(w, op_stream, conf);
-              op_stream.close();
-
-              FileInputStream in_stream = new FileInputStream(fPath.toString());
-              Utilities.deserializePlan(in_stream, ReduceWork.class, conf);
-              in_stream.close();
-
-            } catch (Exception e) {
-              LOG.error("Kryo writing went wrong " + fName);
-            }
-          }
-        }
-
         LOG.info("Setting plan to conf variable : " + planPath.toUri().getPath());
         conf.set(planPath.toUri().getPath(),
             Base64.encodeBase64String(byteOut.toByteArray()));

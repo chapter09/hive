@@ -1005,7 +1005,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
       // raajay - dump the optimized plan
       if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".opt_plan";
+        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".cbo";
         Path optASTFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), optASTFileName);
         try {
           LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
@@ -1013,8 +1013,6 @@ public class CalcitePlanner extends SemanticAnalyzer {
           LOG.info("Writing CBO optimized plan " + optASTFile.toString());
           PrintWriter optWriter = new PrintWriter(optASTFile.toString(), "UTF-8");
           optWriter.write(RelOptUtil.toString(calciteOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
-//          optWriter.write("\nRow Count = " + RelMetadataQuery.getRowCount(calciteOptimizedPlan).toString());
-//          optWriter.write("\nCumulative Cost = " + RelMetadataQuery.getCumulativeCost(calciteOptimizedPlan).toString());
           optWriter.close();
         } catch (Exception e) {
           LOG.debug("Cannot open: " + optASTFileName);
