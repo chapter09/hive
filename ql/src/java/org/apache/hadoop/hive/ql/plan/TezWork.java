@@ -68,7 +68,7 @@ public class TezWork extends AbstractOperatorDesc {
   private static transient final Log LOG = LogFactory.getLog(TezWork.class);
 
   private static int counter;
-  private final String name;
+  private String name;
   private final Set<BaseWork> roots = new HashSet<BaseWork>();
   private final Set<BaseWork> leaves = new HashSet<BaseWork>();
   private final Map<BaseWork, List<BaseWork>> workGraph = new HashMap<BaseWork, List<BaseWork>>();
@@ -84,6 +84,10 @@ public class TezWork extends AbstractOperatorDesc {
   @Explain(displayName = "DagName")
   public String getName() {
     return name;
+  }
+
+  public void setName(String myname) {
+    this.name = myname;
   }
 
   /**
