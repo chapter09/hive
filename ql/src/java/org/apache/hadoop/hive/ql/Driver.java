@@ -512,7 +512,10 @@ public class Driver implements CommandProcessor {
         qpWriter.close();
       }
 
+      // TODO : should we write the tez plan right here ?
+
       return 0;
+
     } catch (Exception e) {
       ErrorMsg error = ErrorMsg.getErrorMsg(e.getMessage());
       errorMessage = "FAILED: " + e.getClass().getSimpleName();
@@ -1222,6 +1225,7 @@ public class Driver implements CommandProcessor {
 
     int ret;
     if (!alreadyCompiled) {
+      // Semantic Analysis is called from here: Raajay
       ret = compileInternal(command);
       if (ret != 0) {
         return createProcessorResponse(ret);
@@ -1251,13 +1255,14 @@ public class Driver implements CommandProcessor {
       }
       if(!txnManager.isTxnOpen() && plan.getOperation() == HiveOperation.QUERY && !txnManager.getAutoCommit()) {
         //this effectively makes START TRANSACTION optional and supports JDBC setAutoCommit(false) semantics
-        //also, indirectly allows DDL to be executed outside a txn context 
+        //also, indirectly allows DDL to be executed outside a txn context
         startTxnImplicitly = true;
       }
       if(txnManager.getAutoCommit() && plan.getOperation() == HiveOperation.START_TRANSACTION) {
           return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_IN_AUTOCOMMIT, null, plan.getOperationName()));
       }
     }
+
     if(plan.getOperation() == HiveOperation.SET_AUTOCOMMIT) {
       try {
         if(plan.getAutoCommitValue() && !txnManager.getAutoCommit()) {
@@ -1282,7 +1287,9 @@ public class Driver implements CommandProcessor {
         return rollback(createProcessorResponse(ret));
       }
     }
+
     ret = execute();
+
     if (ret != 0) {
       //if needRequireLock is false, the release here will do nothing because there is no lock
       return rollback(createProcessorResponse(ret));
@@ -1328,7 +1335,7 @@ public class Driver implements CommandProcessor {
       releaseLocksAndCommitOrRollback(ctx.getHiveLocks(), false);
     }
     catch (LockException e) {
-      LOG.error("rollback() FAILED: " + cpr);//make sure not to loose 
+      LOG.error("rollback() FAILED: " + cpr);//make sure not to loose
       handleHiveException(e, 12, "Additional info in hive.log at \"rollback() FAILED\"");
     }
     return cpr;
@@ -1427,6 +1434,7 @@ public class Driver implements CommandProcessor {
   }
 
   public int execute() throws CommandNeedRetryException {
+
     PerfLogger perfLogger = PerfLogger.getPerfLogger();
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.DRIVER_EXECUTE);
     boolean noName = StringUtils.isEmpty(conf.getVar(HiveConf.ConfVars.HADOOPJOBNAME));
@@ -1498,32 +1506,6 @@ public class Driver implements CommandProcessor {
 
       DriverContext driverCxt = new DriverContext(ctx);
       driverCxt.prepare(plan);
-
-      // Dump the work information in each Tez Task
-      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
-          String fName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".splan";
-          java.nio.file.Path fPath = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), fName);
-          try {
-            LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
-            Files.createDirectories(fPath.getParent());
-//            LOG.info("Writing the serialized Query Plan: " + fPath.toString());
-//
-//            FileOutputStream op_stream = new FileOutputStream(fPath.toString());
-//            Utilities.serializePlan(plan, op_stream, conf);
-//            op_stream.close();
-//
-//            FileInputStream in_stream = new FileInputStream(fPath.toString());
-//            Utilities.deserializePlan(in_stream, QueryPlan.class, conf);
-//            in_stream.close();
-//            PrintWriter opWriter = new PrintWriter(fPath.toString(), "UTF-8");
-//            opWriter.write(plan.toThriftJSONString());
-//            opWriter.write(plan.toBinaryString());
-//            opWriter.close();
-          } catch (Exception e) {
-            LOG.error("Cannot open: " + fName);
-          }
-      }
-
       ctx.setHDFSCleanup(true);
 
       this.driverCxt = driverCxt; // for canceling the query (should be bound to session?)
@@ -1676,6 +1658,7 @@ public class Driver implements CommandProcessor {
         SessionState.get().getHiveHistory().setQueryProperty(queryId, Keys.QUERY_RET_CODE,
             String.valueOf(0));
         SessionState.get().getHiveHistory().printRowCount(queryId);
+
       }
     } catch (CommandNeedRetryException e) {
       throw e;
@@ -1713,6 +1696,7 @@ public class Driver implements CommandProcessor {
         console.printInfo("Total MapReduce CPU Time Spent: " + Utilities.formatMsecToStr(totalCpu));
       }
     }
+
     plan.setDone();
 
     if (SessionState.get() != null) {
@@ -1726,6 +1710,7 @@ public class Driver implements CommandProcessor {
     console.printInfo("OK");
 
     return (0);
+
   }
 
   private void setErrorMsgAndDetail(int exitVal, Throwable downstreamError, Task tsk) {
