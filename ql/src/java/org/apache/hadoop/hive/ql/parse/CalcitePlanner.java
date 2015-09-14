@@ -863,6 +863,11 @@ public class CalcitePlanner extends SemanticAnalyzer {
         semanticException = e;
         throw new RuntimeException(e);
       }
+      
+      // how to get the sort order desired
+      // conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_RANK)
+
+
 
       // Create MD provider
       HiveDefaultRelMetadataProvider mdProvider = new HiveDefaultRelMetadataProvider(conf);
