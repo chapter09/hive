@@ -104,20 +104,6 @@ public class TezTask extends Task<TezWork> {
 
   public void DisplayDAG(DAG dag, PrintWriter pw) {
     //TODO: get the running time for vertex and edges
-    pw.write("# printing the logical dag in our format");
-    // Obtain the vertices from DAG
-    Map<String, Vertex> vertex_names = new HashMap<String, Vertex>();
-    for(Vertex v : dag.getVertices()) {
-      pw.write("Vertex:" + v.getName() + "\n");
-      vertex_names.put(v.getName(), v);
-    }
-    // iterate through the vertices
-    for (Vertex src: dag.getVertices()) {
-        // iterate through the outgoing edges
-      for(Vertex dst : src.getOutputVertices()) {
-        pw.write("Edge:" + src.getName() + ":" + dst.getName() + "\n");
-      }
-    }
   }
 
   private String convertLrToString(LocalResource lr) {
@@ -260,12 +246,29 @@ public class TezTask extends Task<TezWork> {
             Files.createDirectories(dagFile.getParent());
             LOG.info("Writing DAG description for DAGs generated per query: " + dagFile.toString());
             PrintWriter pw = new PrintWriter(dagFile.toString(), "UTF-8");
-            DisplayDAG(dag, pw);
+
+            pw.write("# printing the logical dag in our format");
+            // Obtain the vertices from DAG
+            Map<String, Vertex> vertex_names = new HashMap<String, Vertex>();
+            for(Vertex v : dag.getVertices()) {
+              pw.write("Vertex:" + v.getName() + "\n");
+              vertex_names.put(v.getName(), v);
+            }
+            // iterate through the vertices
+            for (Vertex src: dag.getVertices()) {
+                // iterate through the outgoing edges
+              for(Vertex dst : src.getOutputVertices()) {
+                pw.write("Edge:" + src.getName() + ":" + dst.getName() + "\n");
+              }
+            }
+
+            pw.close();
 
         } catch (Exception e) {
             LOG.error("Cannot open: " + dagFileName);
         }
       }
+      assert false;
 
       // Add the extra resources to the dag
       addExtraResourcesToDag(session, dag, inputOutputJars, inputOutputLocalResources);
