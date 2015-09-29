@@ -704,7 +704,7 @@ public final class Utilities {
       OutputStream out = null;
 
       if (HiveConf.getBoolVar(conf, ConfVars.HIVE_RPC_QUERY_PLAN)) {
-        LOG.info("Raajay: we are using HIVE_RPC_QUERY_PLAN = True");
+        LOG.info("Raajay: we are using HIVE_RPC_QUERY_PLAN");
         // add it to the conf
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
@@ -721,6 +721,7 @@ public final class Utilities {
             Base64.encodeBase64String(byteOut.toByteArray()));
 
       } else {
+        LOG.info("Raajay: we are NOT using HIVE_RPC_QUERY_PLAN");
         // use the default file system of the conf
         FileSystem fs = planPath.getFileSystem(conf);
         try {
