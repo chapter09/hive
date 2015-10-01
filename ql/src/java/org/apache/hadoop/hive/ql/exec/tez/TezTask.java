@@ -268,7 +268,6 @@ public class TezTask extends Task<TezWork> {
             LOG.error("Cannot open: " + dagFileName);
         }
       }
-      assert false;
 
       // Add the extra resources to the dag
       addExtraResourcesToDag(session, dag, inputOutputJars, inputOutputLocalResources);
