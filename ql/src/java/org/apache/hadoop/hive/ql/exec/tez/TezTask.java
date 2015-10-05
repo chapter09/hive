@@ -247,7 +247,7 @@ public class TezTask extends Task<TezWork> {
             LOG.info("Writing DAG description for DAGs generated per query: " + dagFile.toString());
             PrintWriter pw = new PrintWriter(dagFile.toString(), "UTF-8");
 
-            pw.write("# printing the logical dag in our format");
+            pw.write("# printing the logical dag in our format\n");
             // Obtain the vertices from DAG
             Map<String, Vertex> vertex_names = new HashMap<String, Vertex>();
             for(Vertex v : dag.getVertices()) {
