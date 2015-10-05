@@ -863,7 +863,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
         semanticException = e;
         throw new RuntimeException(e);
       }
-      
+
       // how to get the sort order desired
       // conf.getIntVar(HiveConf.ConfVars.HIVE_CROSSQUERY_RANK)
 
@@ -876,7 +876,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       calcitePreCboPlan = applyPreJoinOrderingTransforms(calciteGenPlan,
               mdProvider.getMetadataProvider());
 
-      // 3. Appy Join Order Optimizations using Hep Planner (MST Algorithm)
+      // 3. Apply Join Order Optimizations using Hep Planner (MST Algorithm)
       List<RelMetadataProvider> list = Lists.newArrayList();
       list.add(mdProvider.getMetadataProvider());
       RelTraitSet desiredTraits = cluster
