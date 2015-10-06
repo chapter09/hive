@@ -908,6 +908,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       }
       planner.setRoot(rootRel);
       calciteOptimizedPlan = planner.findBestExp();
+      LOG.info("Successfully used the Volcano Planner for query optimization");
 
 
       /*
