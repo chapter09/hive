@@ -261,7 +261,18 @@ public class TezTask extends Task<TezWork> {
                 pw.write("Edge:" + src.getName() + ":" + dst.getName() + "\n");
               }
             }
-
+            // get the input name for the map vertices
+            for(BaseWork w: work.getAllWork()) {
+              if(w.getName().contains("Map")) {
+                String tablename = null;
+                for(String s: ((MapWork)w).getPathToAliases().keySet()) {
+                  String[] parts = s.split("/");
+                  tablename = parts[parts.length -1 ];
+                  break;
+                }
+                pw.write("Input:" + w.getName() + ":" + tablename + "\n");
+              }
+            }
             pw.close();
 
         } catch (Exception e) {
