@@ -875,6 +875,22 @@ public class CalcitePlanner extends SemanticAnalyzer {
       calcitePreCboPlan = applyPreJoinOrderingTransforms(calciteGenPlan,
               mdProvider.getMetadataProvider());
 
+      // raajay - dump the pre cbo plan
+      if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+        String optASTFileName = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".precbo";
+        Path optASTFile = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), optASTFileName);
+        try {
+          LOG.info("Create directory if it does not exist: " + conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+          Files.createDirectories(optASTFile.getParent());
+          LOG.info("Writing Pre-CBO non-optimized plan " + optASTFile.toString());
+          PrintWriter optWriter = new PrintWriter(optASTFile.toString(), "UTF-8");
+          optWriter.write(RelOptUtil.toString(calcitePreCboPlan, SqlExplainLevel.ALL_ATTRIBUTES));
+          optWriter.close();
+        } catch (Exception e) {
+          LOG.debug("Cannot open: " + optASTFileName);
+        }
+      }
+
       // 3. Apply Join Order Optimizations using Hep Planner (MST Algorithm)
       // Now using Volcano planner
       //
