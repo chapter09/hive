@@ -78,6 +78,7 @@ import org.apache.calcite.rel.rules.ReduceExpressionsRule;
 import org.apache.calcite.rel.rules.SemiJoinFilterTransposeRule;
 import org.apache.calcite.rel.rules.SemiJoinJoinTransposeRule;
 import org.apache.calcite.rel.rules.SemiJoinProjectTransposeRule;
+import org.apache.calcite.rel.rules.JoinPushThroughJoinRule;
 import org.apache.calcite.rel.rules.UnionMergeRule;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -893,25 +894,31 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
       // 3. Apply Join Order Optimizations using Hep Planner (MST Algorithm)
       // Now using Volcano planner
-      //
+
       List<RelMetadataProvider> list = Lists.newArrayList();
       list.add(mdProvider.getMetadataProvider());
       RelTraitSet desiredTraits = cluster
           .traitSetOf(HiveRelNode.CONVENTION, RelCollations.EMPTY);
 
-      planner.addRule(new JoinToMultiJoinRule(HiveJoin.class));
-      planner.addRule(new LoptOptimizeJoinRule(HiveJoin.HIVE_JOIN_FACTORY,
-            HiveProject.DEFAULT_PROJECT_FACTORY, HiveFilter.DEFAULT_FILTER_FACTORY));
+//      planner.addRule(new JoinToMultiJoinRule(HiveJoin.class));
+//      planner.addRule(new LoptOptimizeJoinRule(HiveJoin.HIVE_JOIN_FACTORY,
+//            HiveProject.DEFAULT_PROJECT_FACTORY, HiveFilter.DEFAULT_FILTER_FACTORY));
+//
+//      planner.addRule(ReduceExpressionsRule.JOIN_INSTANCE);
+//      planner.addRule(ReduceExpressionsRule.FILTER_INSTANCE);
+//      planner.addRule(ReduceExpressionsRule.PROJECT_INSTANCE);
+//
+//      planner.addRule(ProjectRemoveRule.INSTANCE);
+//
+//      planner.addRule(UnionMergeRule.INSTANCE);
+//
+//      planner.addRule(new ProjectMergeRule(false, HiveProject.DEFAULT_PROJECT_FACTORY));
 
-      planner.addRule(ReduceExpressionsRule.JOIN_INSTANCE);
-      planner.addRule(ReduceExpressionsRule.FILTER_INSTANCE);
-      planner.addRule(ReduceExpressionsRule.PROJECT_INSTANCE);
+      planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:left", false,
+            HiveJoin.class, HiveProject.DEFAULT_PROJECT_FACTORY));
 
-      planner.addRule(ProjectRemoveRule.INSTANCE);
-
-      planner.addRule(UnionMergeRule.INSTANCE);
-
-      planner.addRule(new ProjectMergeRule(false, HiveProject.DEFAULT_PROJECT_FACTORY));
+      planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:right", true,
+            HiveJoin.class, HiveProject.DEFAULT_PROJECT_FACTORY));
 
       planner.registerMetadataProviders(list);
       RelMetadataProvider chainedProvider = ChainedRelMetadataProvider.of(list);
