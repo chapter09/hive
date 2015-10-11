@@ -954,7 +954,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       // Calcite, in a sorted order
       if(combination < 0) {
 
-        Map<Integer, RelNode> sorted_plans = planner.findAllExp();
+        Map<Integer, RelNode> sorted_plans = planner.findAllExp(true);
         SortedMap<Integer, List<RelNode>> binned_plans = new TreeMap<Integer, List<RelNode>>();
         Map<RelNode, Integer> reverse_map = new HashMap<RelNode, Integer>();
         int total_count = 0;
