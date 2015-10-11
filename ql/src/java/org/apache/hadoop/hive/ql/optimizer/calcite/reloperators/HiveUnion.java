@@ -28,7 +28,7 @@ import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveRelNode.Implementor;
 
-public class HiveUnion extends Union {
+public class HiveUnion extends Union implements HiveRelNode {
 
   public static final HiveUnionRelFactory UNION_REL_FACTORY = new HiveUnionRelFactory();
 

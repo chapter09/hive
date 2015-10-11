@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.antlr.runtime.tree.TreeVisitor;
@@ -831,10 +834,22 @@ public class CalcitePlanner extends SemanticAnalyzer {
       this.partitionCache = partitionCache;
     }
 
+    private Double getCumulativeCost(RelNode node) {
+      String digest = RelOptUtil.toString(node, SqlExplainLevel.ALL_ATTRIBUTES)
+        .replaceAll("id = [0-9]+\n", "\n");
+      String[] parts = digest.split("\n");
+      String top_line = parts[0];
+      String[] parts1 = top_line.split("[\\s{,]");
+      int index = Arrays.asList(parts1).indexOf("rows");
+      Double c_cost = Double.parseDouble(parts1[index-1]);
+      return c_cost;
+    }
+
     @Override
     public RelNode apply(RelOptCluster cluster, RelOptSchema relOptSchema, SchemaPlus rootSchema) {
       RelNode calciteGenPlan = null;
       RelNode calcitePreCboPlan = null;
+      RelNode calciteVolcanoOptimizedPlan = null;
       RelNode calciteOptimizedPlan = null;
 
       /*
@@ -893,30 +908,31 @@ public class CalcitePlanner extends SemanticAnalyzer {
       }
 
       // 3. Apply Join Order Optimizations using Hep Planner (MST Algorithm)
-      // Now using Volcano planner
+      // Raajay: We have modified this part; first use the Volcano planner
+      // to get the dag with a particular sort order and then apply the
+      // HepPlanner, without the JoinToMultiJoin and LoptOptimizeRule
 
       List<RelMetadataProvider> list = Lists.newArrayList();
       list.add(mdProvider.getMetadataProvider());
       RelTraitSet desiredTraits = cluster
           .traitSetOf(HiveRelNode.CONVENTION, RelCollations.EMPTY);
 
-//      planner.addRule(new JoinToMultiJoinRule(HiveJoin.class));
-//      planner.addRule(new LoptOptimizeJoinRule(HiveJoin.HIVE_JOIN_FACTORY,
-//            HiveProject.DEFAULT_PROJECT_FACTORY, HiveFilter.DEFAULT_FILTER_FACTORY));
-//
-//      planner.addRule(ReduceExpressionsRule.JOIN_INSTANCE);
-//      planner.addRule(ReduceExpressionsRule.FILTER_INSTANCE);
-//      planner.addRule(ReduceExpressionsRule.PROJECT_INSTANCE);
-//
-//      planner.addRule(ProjectRemoveRule.INSTANCE);
-//
-//      planner.addRule(UnionMergeRule.INSTANCE);
-//
-//      planner.addRule(new ProjectMergeRule(false, HiveProject.DEFAULT_PROJECT_FACTORY));
+      planner.clear();
 
+//      planner.addRule(HiveFilterJoinRule.FILTER_ON_JOIN);
+//      planner.addRule(HiveFilterJoinRule.JOIN);
+
+//      planner.addRule(new HiveFilterProjectTransposeRule(HiveFilter.class,
+//            HiveFilter.DEFAULT_FILTER_FACTORY, HiveProject.class,
+//            HiveProject.DEFAULT_PROJECT_FACTORY));
+
+//      planner.addRule(new HiveFilterSetOpTransposeRule(HiveFilter.DEFAULT_FILTER_FACTORY));
+//      planner.addRule(HiveJoinProjectTransposeRule.BOTH_PROJECT);
+//      planner.addRule(HiveJoinProjectTransposeRule.LEFT_PROJECT);
+//      planner.addRule(HiveJoinProjectTransposeRule.RIGHT_PROJECT);
+      planner.addRule(HiveJoinCommuteRule.INSTANCE);
       planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:left", false,
             HiveJoin.class, HiveProject.DEFAULT_PROJECT_FACTORY));
-
       planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:right", true,
             HiveJoin.class, HiveProject.DEFAULT_PROJECT_FACTORY));
 
@@ -926,53 +942,114 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
       RelNode rootRel = calcitePreCboPlan;
       planner.setRoot(rootRel);
+
       if (!calcitePreCboPlan.getTraitSet().equals(desiredTraits)) {
         rootRel = planner.changeTraits(calcitePreCboPlan, desiredTraits);
       }
+
       planner.setRoot(rootRel);
-      calciteOptimizedPlan = planner.findBestExp();
-      LOG.info("Successfully used the Volcano Planner for query optimization");
+      int combination = HiveConf.getIntVar(conf, ConfVars.HIVE_CROSSQUERY_COMBINATION);
 
+      // Under this condition we dump all the distinct dags obtained from
+      // Calcite, in a sorted order
+      if(combination < 0) {
 
-      /*
+        Map<Integer, RelNode> sorted_plans = planner.findAllExp();
+        SortedMap<Integer, List<RelNode>> binned_plans = new TreeMap<Integer, List<RelNode>>();
+        Map<RelNode, Integer> reverse_map = new HashMap<RelNode, Integer>();
+        int total_count = 0;
+        int distinct_count = 0;
+
+        for(Integer i: sorted_plans.keySet()) {
+          reverse_map.put(sorted_plans.get(i), i);
+//          Double cost = getCumulativeCost(sorted_plans.get(i));
+          Double cost = RelMetadataQuery
+            .getCumulativeCost(sorted_plans.get(i)).getRows();
+          Integer int_cost = cost.intValue();
+          if(!binned_plans.containsKey(int_cost)) {
+            binned_plans.put(int_cost, new ArrayList<RelNode>());
+            distinct_count++;
+          }
+          binned_plans.get(int_cost).add(sorted_plans.get(i));
+          total_count++;
+        }
+
+        LOG.info("Total number of plans = " + total_count);
+        LOG.info("Total number of distinct cost plans = " + distinct_count);
+
+        if(conf.getBoolVar(HiveConf.ConfVars.HIVE_CROSSQUERY_VERBOSE)) {
+          String fname = conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_EXTID) + ".alldags";
+          Path fpath = Paths.get(conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR), fname);
+          try {
+            LOG.info("Create directory if it does not exist: " +
+                conf.getVar(HiveConf.ConfVars.HIVE_CROSSQUERY_DUMPDIR));
+            Files.createDirectories(fpath.getParent());
+            LOG.info("Writing all plans from CBO " + fpath.toString());
+            PrintWriter optWriter = new PrintWriter(fpath.toString(), "UTF-8");
+            // write them to a single file
+            optWriter.write("# Distinct costs = " + distinct_count
+                + "\n# Total dags = " + total_count + "\n");
+            for(Integer cost: binned_plans.keySet()) {
+              optWriter.write("# Cost = " + cost + " ; count = " + binned_plans.get(cost).size() + "\n");
+              for(RelNode node : binned_plans.get(cost)){
+                String str_plan = RelOptUtil
+                    .toString(node, SqlExplainLevel.ALL_ATTRIBUTES)
+                    .replaceAll("id = [0-9]+\n", "\n");
+                optWriter.write("### " + reverse_map.get(node) +"\n");
+                optWriter.write(str_plan);
+                optWriter.write("\n\n");
+//                break;
+              }
+            }
+            optWriter.close();
+          } catch (Exception e) {
+            LOG.debug("Cannot open: " + fname);
+          }
+        }
+      }
+
+      if(combination < 0) {
+        calciteVolcanoOptimizedPlan = planner.findBestExp();
+      } else {
+        calciteVolcanoOptimizedPlan = planner.findBestExp(combination);
+      }
+
+      LOG.info("Successfully used the Volcano Planner for join optimization");
+      LOG.info(RelOptUtil.toString(calciteVolcanoOptimizedPlan, SqlExplainLevel.ALL_ATTRIBUTES));
       HepProgram hepPgm = null;
       HepProgramBuilder hepPgmBldr = new HepProgramBuilder().addMatchOrder(HepMatchOrder.BOTTOM_UP);
 
+      /*
       hepPgmBldr.addRuleInstance(new JoinToMultiJoinRule(HiveJoin.class));
 
       hepPgmBldr.addRuleInstance(new LoptOptimizeJoinRule(HiveJoin.HIVE_JOIN_FACTORY,
           HiveProject.DEFAULT_PROJECT_FACTORY, HiveFilter.DEFAULT_FILTER_FACTORY));
-
+      */
 
       hepPgmBldr.addRuleInstance(ReduceExpressionsRule.JOIN_INSTANCE);
       hepPgmBldr.addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE);
       hepPgmBldr.addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE);
-
       hepPgmBldr.addRuleInstance(ProjectRemoveRule.INSTANCE);
-
       hepPgmBldr.addRuleInstance(UnionMergeRule.INSTANCE);
-
       hepPgmBldr.addRuleInstance(new ProjectMergeRule(false, HiveProject.DEFAULT_PROJECT_FACTORY));
-
 
       hepPgm = hepPgmBldr.build();
       HepPlanner hepPlanner = new HepPlanner(hepPgm);
 
       hepPlanner.registerMetadataProviders(list);
-      RelMetadataProvider chainedProvider = ChainedRelMetadataProvider.of(list);
+//      RelMetadataProvider chainedProvider = ChainedRelMetadataProvider.of(list);
       cluster.setMetadataProvider(new CachingRelMetadataProvider(chainedProvider, hepPlanner));
 
-      RelNode rootRel = calcitePreCboPlan;
-      hepPlanner.setRoot(rootRel);
-      if (!calcitePreCboPlan.getTraitSet().equals(desiredTraits)) {
-        rootRel = hepPlanner.changeTraits(calcitePreCboPlan, desiredTraits);
+      RelNode rootRelHep = calciteVolcanoOptimizedPlan;
+      hepPlanner.setRoot(rootRelHep);
+
+      if (!calciteVolcanoOptimizedPlan.getTraitSet().equals(desiredTraits)) {
+        rootRelHep = hepPlanner.changeTraits(calciteVolcanoOptimizedPlan, desiredTraits);
       }
 
-      hepPlanner.setRoot(rootRel);
+      hepPlanner.setRoot(rootRelHep);
+
       calciteOptimizedPlan = hepPlanner.findBestExp();
-      */
-
-
 
       // 4. Run rule to try to remove projects on top of join operators
       calciteOptimizedPlan = hepPlan(calciteOptimizedPlan, false, mdProvider.getMetadataProvider(),
@@ -3125,5 +3202,4 @@ public class CalcitePlanner extends SemanticAnalyzer {
       return tabAliases;
     }
   }
-
 }

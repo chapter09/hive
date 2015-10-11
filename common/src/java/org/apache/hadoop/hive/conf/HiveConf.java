@@ -746,7 +746,7 @@ public class HiveConf extends Configuration {
     HIVE_CROSSQUERY_ACTIVE("hive.crossquery.active", true,
         "Switch on lazy optimization for queries"),
     HIVE_CROSSQUERY_COMBINATION("hive.crossquery.combination", 0,
-        "Integer code for the combination of rules that are active"),
+        "The parameter given to retrieve alternate query plans from calcite"),
     HIVE_CROSSQUERY_RANK("hive.crossquery.rank", 1,
         "Rank of plan to choose from the Calcite CBO"),
     HIVE_CROSSQUERY_DUMPDIR("hive.crossquery.dumpdir", "/tmp/crossquery",
