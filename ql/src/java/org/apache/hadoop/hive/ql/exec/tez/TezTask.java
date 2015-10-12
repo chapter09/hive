@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.URL;
+import org.apache.tez.client.TezClient;
 import org.apache.tez.common.counters.CounterGroup;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
@@ -83,11 +85,14 @@ import org.json.JSONObject;
 public class TezTask extends Task<TezWork> {
 
   private static final String CLASS_NAME = TezTask.class.getName();
-  private final PerfLogger perfLogger = PerfLogger.getPerfLogger();
+  private final PerfLogger perfLogger = SessionState.getPerfLogger();
 
   private TezCounters counters;
 
   private final DagUtils utils;
+
+  Map<BaseWork, Vertex> workToVertex = new HashMap<BaseWork, Vertex>();
+  Map<BaseWork, JobConf> workToConf = new HashMap<BaseWork, JobConf>();
 
   public TezTask() {
     this(DagUtils.getInstance());
@@ -320,6 +325,15 @@ public class TezTask extends Task<TezWork> {
       // rc will be 1 at this point indicating failure.
     } finally {
       Utilities.clearWork(conf);
+
+      // Clear gWorkMap
+      for (BaseWork w : work.getAllWork()) {
+        JobConf workCfg = workToConf.get(w);
+        if (workCfg != null) {
+          Utilities.clearWorkMapForConf(workCfg);
+        }
+      }
+
       if (cleanContext) {
         try {
           ctx.clear();
@@ -362,7 +376,8 @@ public class TezTask extends Task<TezWork> {
     final boolean missingLocalResources = !session
         .hasResources(inputOutputJars);
 
-    if (!session.isOpen()) {
+    TezClient client = session.getSession();
+    if (client == null) {
       // can happen if the user sets the tez flag after the session was
       // established
       LOG.info("Tez session hasn't been created yet. Opening session");
@@ -374,7 +389,7 @@ public class TezTask extends Task<TezWork> {
       if (missingLocalResources) {
         LOG.info("Tez session missing resources," +
             " adding additional necessary resources");
-        session.getSession().addAppMasterLocalFiles(extraResources);
+        client.addAppMasterLocalFiles(extraResources);
       }
 
       session.refreshLocalResourcesFromConf(conf);
@@ -400,8 +415,6 @@ public class TezTask extends Task<TezWork> {
       throws Exception {
 
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.TEZ_BUILD_DAG);
-    Map<BaseWork, Vertex> workToVertex = new HashMap<BaseWork, Vertex>();
-    Map<BaseWork, JobConf> workToConf = new HashMap<BaseWork, JobConf>();
 
     // getAllWork returns a topologically sorted list, which we use to make
     // sure that vertices are created before they are used in edges.
@@ -414,7 +427,8 @@ public class TezTask extends Task<TezWork> {
     DAG dag = DAG.create(work.getName());
 
     // set some info for the query
-    JSONObject json = new JSONObject().put("context", "Hive").put("description", ctx.getCmd());
+    JSONObject json = new JSONObject(new LinkedHashMap()).put("context", "Hive")
+        .put("description", ctx.getCmd());
     String dagInfo = json.toString();
 
     if (LOG.isDebugEnabled()) {

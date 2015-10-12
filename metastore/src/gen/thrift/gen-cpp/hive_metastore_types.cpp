@@ -14373,6 +14373,1059 @@ std::ostream& operator<<(std::ostream& out, const FireEventResponse& obj) {
 }
 
 
+MetadataPpdResult::~MetadataPpdResult() throw() {
+}
+
+
+void MetadataPpdResult::__set_metadata(const std::string& val) {
+  this->metadata = val;
+__isset.metadata = true;
+}
+
+void MetadataPpdResult::__set_includeBitset(const std::string& val) {
+  this->includeBitset = val;
+__isset.includeBitset = true;
+}
+
+const char* MetadataPpdResult::ascii_fingerprint = "D0297FC5011701BD87898CC36146A565";
+const uint8_t MetadataPpdResult::binary_fingerprint[16] = {0xD0,0x29,0x7F,0xC5,0x01,0x17,0x01,0xBD,0x87,0x89,0x8C,0xC3,0x61,0x46,0xA5,0x65};
+
+uint32_t MetadataPpdResult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readBinary(this->metadata);
+          this->__isset.metadata = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readBinary(this->includeBitset);
+          this->__isset.includeBitset = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t MetadataPpdResult::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("MetadataPpdResult");
+
+  if (this->__isset.metadata) {
+    xfer += oprot->writeFieldBegin("metadata", ::apache::thrift::protocol::T_STRING, 1);
+    xfer += oprot->writeBinary(this->metadata);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.includeBitset) {
+    xfer += oprot->writeFieldBegin("includeBitset", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeBinary(this->includeBitset);
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(MetadataPpdResult &a, MetadataPpdResult &b) {
+  using ::std::swap;
+  swap(a.metadata, b.metadata);
+  swap(a.includeBitset, b.includeBitset);
+  swap(a.__isset, b.__isset);
+}
+
+MetadataPpdResult::MetadataPpdResult(const MetadataPpdResult& other609) {
+  metadata = other609.metadata;
+  includeBitset = other609.includeBitset;
+  __isset = other609.__isset;
+}
+MetadataPpdResult& MetadataPpdResult::operator=(const MetadataPpdResult& other610) {
+  metadata = other610.metadata;
+  includeBitset = other610.includeBitset;
+  __isset = other610.__isset;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const MetadataPpdResult& obj) {
+  using apache::thrift::to_string;
+  out << "MetadataPpdResult(";
+  out << "metadata="; (obj.__isset.metadata ? (out << to_string(obj.metadata)) : (out << "<null>"));
+  out << ", " << "includeBitset="; (obj.__isset.includeBitset ? (out << to_string(obj.includeBitset)) : (out << "<null>"));
+  out << ")";
+  return out;
+}
+
+
+GetFileMetadataByExprResult::~GetFileMetadataByExprResult() throw() {
+}
+
+
+void GetFileMetadataByExprResult::__set_metadata(const std::map<int64_t, MetadataPpdResult> & val) {
+  this->metadata = val;
+}
+
+void GetFileMetadataByExprResult::__set_isSupported(const bool val) {
+  this->isSupported = val;
+}
+
+const char* GetFileMetadataByExprResult::ascii_fingerprint = "9927698B8A2D476882C8F24E9919B943";
+const uint8_t GetFileMetadataByExprResult::binary_fingerprint[16] = {0x99,0x27,0x69,0x8B,0x8A,0x2D,0x47,0x68,0x82,0xC8,0xF2,0x4E,0x99,0x19,0xB9,0x43};
+
+uint32_t GetFileMetadataByExprResult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_metadata = false;
+  bool isset_isSupported = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_MAP) {
+          {
+            this->metadata.clear();
+            uint32_t _size611;
+            ::apache::thrift::protocol::TType _ktype612;
+            ::apache::thrift::protocol::TType _vtype613;
+            xfer += iprot->readMapBegin(_ktype612, _vtype613, _size611);
+            uint32_t _i615;
+            for (_i615 = 0; _i615 < _size611; ++_i615)
+            {
+              int64_t _key616;
+              xfer += iprot->readI64(_key616);
+              MetadataPpdResult& _val617 = this->metadata[_key616];
+              xfer += _val617.read(iprot);
+            }
+            xfer += iprot->readMapEnd();
+          }
+          isset_metadata = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->isSupported);
+          isset_isSupported = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_metadata)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_isSupported)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t GetFileMetadataByExprResult::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("GetFileMetadataByExprResult");
+
+  xfer += oprot->writeFieldBegin("metadata", ::apache::thrift::protocol::T_MAP, 1);
+  {
+    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->metadata.size()));
+    std::map<int64_t, MetadataPpdResult> ::const_iterator _iter618;
+    for (_iter618 = this->metadata.begin(); _iter618 != this->metadata.end(); ++_iter618)
+    {
+      xfer += oprot->writeI64(_iter618->first);
+      xfer += _iter618->second.write(oprot);
+    }
+    xfer += oprot->writeMapEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("isSupported", ::apache::thrift::protocol::T_BOOL, 2);
+  xfer += oprot->writeBool(this->isSupported);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(GetFileMetadataByExprResult &a, GetFileMetadataByExprResult &b) {
+  using ::std::swap;
+  swap(a.metadata, b.metadata);
+  swap(a.isSupported, b.isSupported);
+}
+
+GetFileMetadataByExprResult::GetFileMetadataByExprResult(const GetFileMetadataByExprResult& other619) {
+  metadata = other619.metadata;
+  isSupported = other619.isSupported;
+}
+GetFileMetadataByExprResult& GetFileMetadataByExprResult::operator=(const GetFileMetadataByExprResult& other620) {
+  metadata = other620.metadata;
+  isSupported = other620.isSupported;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const GetFileMetadataByExprResult& obj) {
+  using apache::thrift::to_string;
+  out << "GetFileMetadataByExprResult(";
+  out << "metadata=" << to_string(obj.metadata);
+  out << ", " << "isSupported=" << to_string(obj.isSupported);
+  out << ")";
+  return out;
+}
+
+
+GetFileMetadataByExprRequest::~GetFileMetadataByExprRequest() throw() {
+}
+
+
+void GetFileMetadataByExprRequest::__set_fileIds(const std::vector<int64_t> & val) {
+  this->fileIds = val;
+}
+
+void GetFileMetadataByExprRequest::__set_expr(const std::string& val) {
+  this->expr = val;
+}
+
+void GetFileMetadataByExprRequest::__set_doGetFooters(const bool val) {
+  this->doGetFooters = val;
+__isset.doGetFooters = true;
+}
+
+const char* GetFileMetadataByExprRequest::ascii_fingerprint = "C52686F0528367D7E6CE54B804FC33B5";
+const uint8_t GetFileMetadataByExprRequest::binary_fingerprint[16] = {0xC5,0x26,0x86,0xF0,0x52,0x83,0x67,0xD7,0xE6,0xCE,0x54,0xB8,0x04,0xFC,0x33,0xB5};
+
+uint32_t GetFileMetadataByExprRequest::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_fileIds = false;
+  bool isset_expr = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->fileIds.clear();
+            uint32_t _size621;
+            ::apache::thrift::protocol::TType _etype624;
+            xfer += iprot->readListBegin(_etype624, _size621);
+            this->fileIds.resize(_size621);
+            uint32_t _i625;
+            for (_i625 = 0; _i625 < _size621; ++_i625)
+            {
+              xfer += iprot->readI64(this->fileIds[_i625]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_fileIds = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readBinary(this->expr);
+          isset_expr = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->doGetFooters);
+          this->__isset.doGetFooters = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_fileIds)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_expr)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t GetFileMetadataByExprRequest::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("GetFileMetadataByExprRequest");
+
+  xfer += oprot->writeFieldBegin("fileIds", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->fileIds.size()));
+    std::vector<int64_t> ::const_iterator _iter626;
+    for (_iter626 = this->fileIds.begin(); _iter626 != this->fileIds.end(); ++_iter626)
+    {
+      xfer += oprot->writeI64((*_iter626));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("expr", ::apache::thrift::protocol::T_STRING, 2);
+  xfer += oprot->writeBinary(this->expr);
+  xfer += oprot->writeFieldEnd();
+
+  if (this->__isset.doGetFooters) {
+    xfer += oprot->writeFieldBegin("doGetFooters", ::apache::thrift::protocol::T_BOOL, 3);
+    xfer += oprot->writeBool(this->doGetFooters);
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(GetFileMetadataByExprRequest &a, GetFileMetadataByExprRequest &b) {
+  using ::std::swap;
+  swap(a.fileIds, b.fileIds);
+  swap(a.expr, b.expr);
+  swap(a.doGetFooters, b.doGetFooters);
+  swap(a.__isset, b.__isset);
+}
+
+GetFileMetadataByExprRequest::GetFileMetadataByExprRequest(const GetFileMetadataByExprRequest& other627) {
+  fileIds = other627.fileIds;
+  expr = other627.expr;
+  doGetFooters = other627.doGetFooters;
+  __isset = other627.__isset;
+}
+GetFileMetadataByExprRequest& GetFileMetadataByExprRequest::operator=(const GetFileMetadataByExprRequest& other628) {
+  fileIds = other628.fileIds;
+  expr = other628.expr;
+  doGetFooters = other628.doGetFooters;
+  __isset = other628.__isset;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const GetFileMetadataByExprRequest& obj) {
+  using apache::thrift::to_string;
+  out << "GetFileMetadataByExprRequest(";
+  out << "fileIds=" << to_string(obj.fileIds);
+  out << ", " << "expr=" << to_string(obj.expr);
+  out << ", " << "doGetFooters="; (obj.__isset.doGetFooters ? (out << to_string(obj.doGetFooters)) : (out << "<null>"));
+  out << ")";
+  return out;
+}
+
+
+GetFileMetadataResult::~GetFileMetadataResult() throw() {
+}
+
+
+void GetFileMetadataResult::__set_metadata(const std::map<int64_t, std::string> & val) {
+  this->metadata = val;
+}
+
+void GetFileMetadataResult::__set_isSupported(const bool val) {
+  this->isSupported = val;
+}
+
+const char* GetFileMetadataResult::ascii_fingerprint = "D18BCBD4BA945E7F6500F5CD95205706";
+const uint8_t GetFileMetadataResult::binary_fingerprint[16] = {0xD1,0x8B,0xCB,0xD4,0xBA,0x94,0x5E,0x7F,0x65,0x00,0xF5,0xCD,0x95,0x20,0x57,0x06};
+
+uint32_t GetFileMetadataResult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_metadata = false;
+  bool isset_isSupported = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_MAP) {
+          {
+            this->metadata.clear();
+            uint32_t _size629;
+            ::apache::thrift::protocol::TType _ktype630;
+            ::apache::thrift::protocol::TType _vtype631;
+            xfer += iprot->readMapBegin(_ktype630, _vtype631, _size629);
+            uint32_t _i633;
+            for (_i633 = 0; _i633 < _size629; ++_i633)
+            {
+              int64_t _key634;
+              xfer += iprot->readI64(_key634);
+              std::string& _val635 = this->metadata[_key634];
+              xfer += iprot->readBinary(_val635);
+            }
+            xfer += iprot->readMapEnd();
+          }
+          isset_metadata = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_BOOL) {
+          xfer += iprot->readBool(this->isSupported);
+          isset_isSupported = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_metadata)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_isSupported)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t GetFileMetadataResult::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("GetFileMetadataResult");
+
+  xfer += oprot->writeFieldBegin("metadata", ::apache::thrift::protocol::T_MAP, 1);
+  {
+    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_I64, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->metadata.size()));
+    std::map<int64_t, std::string> ::const_iterator _iter636;
+    for (_iter636 = this->metadata.begin(); _iter636 != this->metadata.end(); ++_iter636)
+    {
+      xfer += oprot->writeI64(_iter636->first);
+      xfer += oprot->writeBinary(_iter636->second);
+    }
+    xfer += oprot->writeMapEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("isSupported", ::apache::thrift::protocol::T_BOOL, 2);
+  xfer += oprot->writeBool(this->isSupported);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(GetFileMetadataResult &a, GetFileMetadataResult &b) {
+  using ::std::swap;
+  swap(a.metadata, b.metadata);
+  swap(a.isSupported, b.isSupported);
+}
+
+GetFileMetadataResult::GetFileMetadataResult(const GetFileMetadataResult& other637) {
+  metadata = other637.metadata;
+  isSupported = other637.isSupported;
+}
+GetFileMetadataResult& GetFileMetadataResult::operator=(const GetFileMetadataResult& other638) {
+  metadata = other638.metadata;
+  isSupported = other638.isSupported;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const GetFileMetadataResult& obj) {
+  using apache::thrift::to_string;
+  out << "GetFileMetadataResult(";
+  out << "metadata=" << to_string(obj.metadata);
+  out << ", " << "isSupported=" << to_string(obj.isSupported);
+  out << ")";
+  return out;
+}
+
+
+GetFileMetadataRequest::~GetFileMetadataRequest() throw() {
+}
+
+
+void GetFileMetadataRequest::__set_fileIds(const std::vector<int64_t> & val) {
+  this->fileIds = val;
+}
+
+const char* GetFileMetadataRequest::ascii_fingerprint = "E49D7D1A9013CC81CD0F69D631EF82E4";
+const uint8_t GetFileMetadataRequest::binary_fingerprint[16] = {0xE4,0x9D,0x7D,0x1A,0x90,0x13,0xCC,0x81,0xCD,0x0F,0x69,0xD6,0x31,0xEF,0x82,0xE4};
+
+uint32_t GetFileMetadataRequest::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_fileIds = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->fileIds.clear();
+            uint32_t _size639;
+            ::apache::thrift::protocol::TType _etype642;
+            xfer += iprot->readListBegin(_etype642, _size639);
+            this->fileIds.resize(_size639);
+            uint32_t _i643;
+            for (_i643 = 0; _i643 < _size639; ++_i643)
+            {
+              xfer += iprot->readI64(this->fileIds[_i643]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_fileIds = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_fileIds)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t GetFileMetadataRequest::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("GetFileMetadataRequest");
+
+  xfer += oprot->writeFieldBegin("fileIds", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->fileIds.size()));
+    std::vector<int64_t> ::const_iterator _iter644;
+    for (_iter644 = this->fileIds.begin(); _iter644 != this->fileIds.end(); ++_iter644)
+    {
+      xfer += oprot->writeI64((*_iter644));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(GetFileMetadataRequest &a, GetFileMetadataRequest &b) {
+  using ::std::swap;
+  swap(a.fileIds, b.fileIds);
+}
+
+GetFileMetadataRequest::GetFileMetadataRequest(const GetFileMetadataRequest& other645) {
+  fileIds = other645.fileIds;
+}
+GetFileMetadataRequest& GetFileMetadataRequest::operator=(const GetFileMetadataRequest& other646) {
+  fileIds = other646.fileIds;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const GetFileMetadataRequest& obj) {
+  using apache::thrift::to_string;
+  out << "GetFileMetadataRequest(";
+  out << "fileIds=" << to_string(obj.fileIds);
+  out << ")";
+  return out;
+}
+
+
+PutFileMetadataResult::~PutFileMetadataResult() throw() {
+}
+
+
+const char* PutFileMetadataResult::ascii_fingerprint = "99914B932BD37A50B983C5E7C90AE93B";
+const uint8_t PutFileMetadataResult::binary_fingerprint[16] = {0x99,0x91,0x4B,0x93,0x2B,0xD3,0x7A,0x50,0xB9,0x83,0xC5,0xE7,0xC9,0x0A,0xE9,0x3B};
+
+uint32_t PutFileMetadataResult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    xfer += iprot->skip(ftype);
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t PutFileMetadataResult::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("PutFileMetadataResult");
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(PutFileMetadataResult &a, PutFileMetadataResult &b) {
+  using ::std::swap;
+  (void) a;
+  (void) b;
+}
+
+PutFileMetadataResult::PutFileMetadataResult(const PutFileMetadataResult& other647) {
+  (void) other647;
+}
+PutFileMetadataResult& PutFileMetadataResult::operator=(const PutFileMetadataResult& other648) {
+  (void) other648;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const PutFileMetadataResult& obj) {
+  using apache::thrift::to_string;
+  (void) obj;
+  out << "PutFileMetadataResult(";
+  out << ")";
+  return out;
+}
+
+
+PutFileMetadataRequest::~PutFileMetadataRequest() throw() {
+}
+
+
+void PutFileMetadataRequest::__set_fileIds(const std::vector<int64_t> & val) {
+  this->fileIds = val;
+}
+
+void PutFileMetadataRequest::__set_metadata(const std::vector<std::string> & val) {
+  this->metadata = val;
+}
+
+const char* PutFileMetadataRequest::ascii_fingerprint = "D64A208A8BCFCE146F4E2CB2176A807C";
+const uint8_t PutFileMetadataRequest::binary_fingerprint[16] = {0xD6,0x4A,0x20,0x8A,0x8B,0xCF,0xCE,0x14,0x6F,0x4E,0x2C,0xB2,0x17,0x6A,0x80,0x7C};
+
+uint32_t PutFileMetadataRequest::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_fileIds = false;
+  bool isset_metadata = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->fileIds.clear();
+            uint32_t _size649;
+            ::apache::thrift::protocol::TType _etype652;
+            xfer += iprot->readListBegin(_etype652, _size649);
+            this->fileIds.resize(_size649);
+            uint32_t _i653;
+            for (_i653 = 0; _i653 < _size649; ++_i653)
+            {
+              xfer += iprot->readI64(this->fileIds[_i653]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_fileIds = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->metadata.clear();
+            uint32_t _size654;
+            ::apache::thrift::protocol::TType _etype657;
+            xfer += iprot->readListBegin(_etype657, _size654);
+            this->metadata.resize(_size654);
+            uint32_t _i658;
+            for (_i658 = 0; _i658 < _size654; ++_i658)
+            {
+              xfer += iprot->readBinary(this->metadata[_i658]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_metadata = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_fileIds)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_metadata)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t PutFileMetadataRequest::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("PutFileMetadataRequest");
+
+  xfer += oprot->writeFieldBegin("fileIds", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->fileIds.size()));
+    std::vector<int64_t> ::const_iterator _iter659;
+    for (_iter659 = this->fileIds.begin(); _iter659 != this->fileIds.end(); ++_iter659)
+    {
+      xfer += oprot->writeI64((*_iter659));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("metadata", ::apache::thrift::protocol::T_LIST, 2);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->metadata.size()));
+    std::vector<std::string> ::const_iterator _iter660;
+    for (_iter660 = this->metadata.begin(); _iter660 != this->metadata.end(); ++_iter660)
+    {
+      xfer += oprot->writeBinary((*_iter660));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(PutFileMetadataRequest &a, PutFileMetadataRequest &b) {
+  using ::std::swap;
+  swap(a.fileIds, b.fileIds);
+  swap(a.metadata, b.metadata);
+}
+
+PutFileMetadataRequest::PutFileMetadataRequest(const PutFileMetadataRequest& other661) {
+  fileIds = other661.fileIds;
+  metadata = other661.metadata;
+}
+PutFileMetadataRequest& PutFileMetadataRequest::operator=(const PutFileMetadataRequest& other662) {
+  fileIds = other662.fileIds;
+  metadata = other662.metadata;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const PutFileMetadataRequest& obj) {
+  using apache::thrift::to_string;
+  out << "PutFileMetadataRequest(";
+  out << "fileIds=" << to_string(obj.fileIds);
+  out << ", " << "metadata=" << to_string(obj.metadata);
+  out << ")";
+  return out;
+}
+
+
+ClearFileMetadataResult::~ClearFileMetadataResult() throw() {
+}
+
+
+const char* ClearFileMetadataResult::ascii_fingerprint = "99914B932BD37A50B983C5E7C90AE93B";
+const uint8_t ClearFileMetadataResult::binary_fingerprint[16] = {0x99,0x91,0x4B,0x93,0x2B,0xD3,0x7A,0x50,0xB9,0x83,0xC5,0xE7,0xC9,0x0A,0xE9,0x3B};
+
+uint32_t ClearFileMetadataResult::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    xfer += iprot->skip(ftype);
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t ClearFileMetadataResult::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("ClearFileMetadataResult");
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(ClearFileMetadataResult &a, ClearFileMetadataResult &b) {
+  using ::std::swap;
+  (void) a;
+  (void) b;
+}
+
+ClearFileMetadataResult::ClearFileMetadataResult(const ClearFileMetadataResult& other663) {
+  (void) other663;
+}
+ClearFileMetadataResult& ClearFileMetadataResult::operator=(const ClearFileMetadataResult& other664) {
+  (void) other664;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const ClearFileMetadataResult& obj) {
+  using apache::thrift::to_string;
+  (void) obj;
+  out << "ClearFileMetadataResult(";
+  out << ")";
+  return out;
+}
+
+
+ClearFileMetadataRequest::~ClearFileMetadataRequest() throw() {
+}
+
+
+void ClearFileMetadataRequest::__set_fileIds(const std::vector<int64_t> & val) {
+  this->fileIds = val;
+}
+
+const char* ClearFileMetadataRequest::ascii_fingerprint = "E49D7D1A9013CC81CD0F69D631EF82E4";
+const uint8_t ClearFileMetadataRequest::binary_fingerprint[16] = {0xE4,0x9D,0x7D,0x1A,0x90,0x13,0xCC,0x81,0xCD,0x0F,0x69,0xD6,0x31,0xEF,0x82,0xE4};
+
+uint32_t ClearFileMetadataRequest::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_fileIds = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->fileIds.clear();
+            uint32_t _size665;
+            ::apache::thrift::protocol::TType _etype668;
+            xfer += iprot->readListBegin(_etype668, _size665);
+            this->fileIds.resize(_size665);
+            uint32_t _i669;
+            for (_i669 = 0; _i669 < _size665; ++_i669)
+            {
+              xfer += iprot->readI64(this->fileIds[_i669]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_fileIds = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_fileIds)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t ClearFileMetadataRequest::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  oprot->incrementRecursionDepth();
+  xfer += oprot->writeStructBegin("ClearFileMetadataRequest");
+
+  xfer += oprot->writeFieldBegin("fileIds", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_I64, static_cast<uint32_t>(this->fileIds.size()));
+    std::vector<int64_t> ::const_iterator _iter670;
+    for (_iter670 = this->fileIds.begin(); _iter670 != this->fileIds.end(); ++_iter670)
+    {
+      xfer += oprot->writeI64((*_iter670));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  oprot->decrementRecursionDepth();
+  return xfer;
+}
+
+void swap(ClearFileMetadataRequest &a, ClearFileMetadataRequest &b) {
+  using ::std::swap;
+  swap(a.fileIds, b.fileIds);
+}
+
+ClearFileMetadataRequest::ClearFileMetadataRequest(const ClearFileMetadataRequest& other671) {
+  fileIds = other671.fileIds;
+}
+ClearFileMetadataRequest& ClearFileMetadataRequest::operator=(const ClearFileMetadataRequest& other672) {
+  fileIds = other672.fileIds;
+  return *this;
+}
+std::ostream& operator<<(std::ostream& out, const ClearFileMetadataRequest& obj) {
+  using apache::thrift::to_string;
+  out << "ClearFileMetadataRequest(";
+  out << "fileIds=" << to_string(obj.fileIds);
+  out << ")";
+  return out;
+}
+
+
 GetAllFunctionsResponse::~GetAllFunctionsResponse() throw() {
 }
 
@@ -14409,14 +15462,14 @@ uint32_t GetAllFunctionsResponse::read(::apache::thrift::protocol::TProtocol* ip
         if (ftype == ::apache::thrift::protocol::T_LIST) {
           {
             this->functions.clear();
-            uint32_t _size609;
-            ::apache::thrift::protocol::TType _etype612;
-            xfer += iprot->readListBegin(_etype612, _size609);
-            this->functions.resize(_size609);
-            uint32_t _i613;
-            for (_i613 = 0; _i613 < _size609; ++_i613)
+            uint32_t _size673;
+            ::apache::thrift::protocol::TType _etype676;
+            xfer += iprot->readListBegin(_etype676, _size673);
+            this->functions.resize(_size673);
+            uint32_t _i677;
+            for (_i677 = 0; _i677 < _size673; ++_i677)
             {
-              xfer += this->functions[_i613].read(iprot);
+              xfer += this->functions[_i677].read(iprot);
             }
             xfer += iprot->readListEnd();
           }
@@ -14446,10 +15499,10 @@ uint32_t GetAllFunctionsResponse::write(::apache::thrift::protocol::TProtocol* o
     xfer += oprot->writeFieldBegin("functions", ::apache::thrift::protocol::T_LIST, 1);
     {
       xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->functions.size()));
-      std::vector<Function> ::const_iterator _iter614;
-      for (_iter614 = this->functions.begin(); _iter614 != this->functions.end(); ++_iter614)
+      std::vector<Function> ::const_iterator _iter678;
+      for (_iter678 = this->functions.begin(); _iter678 != this->functions.end(); ++_iter678)
       {
-        xfer += (*_iter614).write(oprot);
+        xfer += (*_iter678).write(oprot);
       }
       xfer += oprot->writeListEnd();
     }
@@ -14467,13 +15520,13 @@ void swap(GetAllFunctionsResponse &a, GetAllFunctionsResponse &b) {
   swap(a.__isset, b.__isset);
 }
 
-GetAllFunctionsResponse::GetAllFunctionsResponse(const GetAllFunctionsResponse& other615) {
-  functions = other615.functions;
-  __isset = other615.__isset;
+GetAllFunctionsResponse::GetAllFunctionsResponse(const GetAllFunctionsResponse& other679) {
+  functions = other679.functions;
+  __isset = other679.__isset;
 }
-GetAllFunctionsResponse& GetAllFunctionsResponse::operator=(const GetAllFunctionsResponse& other616) {
-  functions = other616.functions;
-  __isset = other616.__isset;
+GetAllFunctionsResponse& GetAllFunctionsResponse::operator=(const GetAllFunctionsResponse& other680) {
+  functions = other680.functions;
+  __isset = other680.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const GetAllFunctionsResponse& obj) {
@@ -14557,13 +15610,13 @@ void swap(MetaException &a, MetaException &b) {
   swap(a.__isset, b.__isset);
 }
 
-MetaException::MetaException(const MetaException& other617) : TException() {
-  message = other617.message;
-  __isset = other617.__isset;
+MetaException::MetaException(const MetaException& other681) : TException() {
+  message = other681.message;
+  __isset = other681.__isset;
 }
-MetaException& MetaException::operator=(const MetaException& other618) {
-  message = other618.message;
-  __isset = other618.__isset;
+MetaException& MetaException::operator=(const MetaException& other682) {
+  message = other682.message;
+  __isset = other682.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const MetaException& obj) {
@@ -14647,13 +15700,13 @@ void swap(UnknownTableException &a, UnknownTableException &b) {
   swap(a.__isset, b.__isset);
 }
 
-UnknownTableException::UnknownTableException(const UnknownTableException& other619) : TException() {
-  message = other619.message;
-  __isset = other619.__isset;
+UnknownTableException::UnknownTableException(const UnknownTableException& other683) : TException() {
+  message = other683.message;
+  __isset = other683.__isset;
 }
-UnknownTableException& UnknownTableException::operator=(const UnknownTableException& other620) {
-  message = other620.message;
-  __isset = other620.__isset;
+UnknownTableException& UnknownTableException::operator=(const UnknownTableException& other684) {
+  message = other684.message;
+  __isset = other684.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const UnknownTableException& obj) {
@@ -14737,13 +15790,13 @@ void swap(UnknownDBException &a, UnknownDBException &b) {
   swap(a.__isset, b.__isset);
 }
 
-UnknownDBException::UnknownDBException(const UnknownDBException& other621) : TException() {
-  message = other621.message;
-  __isset = other621.__isset;
+UnknownDBException::UnknownDBException(const UnknownDBException& other685) : TException() {
+  message = other685.message;
+  __isset = other685.__isset;
 }
-UnknownDBException& UnknownDBException::operator=(const UnknownDBException& other622) {
-  message = other622.message;
-  __isset = other622.__isset;
+UnknownDBException& UnknownDBException::operator=(const UnknownDBException& other686) {
+  message = other686.message;
+  __isset = other686.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const UnknownDBException& obj) {
@@ -14827,13 +15880,13 @@ void swap(AlreadyExistsException &a, AlreadyExistsException &b) {
   swap(a.__isset, b.__isset);
 }
 
-AlreadyExistsException::AlreadyExistsException(const AlreadyExistsException& other623) : TException() {
-  message = other623.message;
-  __isset = other623.__isset;
+AlreadyExistsException::AlreadyExistsException(const AlreadyExistsException& other687) : TException() {
+  message = other687.message;
+  __isset = other687.__isset;
 }
-AlreadyExistsException& AlreadyExistsException::operator=(const AlreadyExistsException& other624) {
-  message = other624.message;
-  __isset = other624.__isset;
+AlreadyExistsException& AlreadyExistsException::operator=(const AlreadyExistsException& other688) {
+  message = other688.message;
+  __isset = other688.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const AlreadyExistsException& obj) {
@@ -14917,13 +15970,13 @@ void swap(InvalidPartitionException &a, InvalidPartitionException &b) {
   swap(a.__isset, b.__isset);
 }
 
-InvalidPartitionException::InvalidPartitionException(const InvalidPartitionException& other625) : TException() {
-  message = other625.message;
-  __isset = other625.__isset;
+InvalidPartitionException::InvalidPartitionException(const InvalidPartitionException& other689) : TException() {
+  message = other689.message;
+  __isset = other689.__isset;
 }
-InvalidPartitionException& InvalidPartitionException::operator=(const InvalidPartitionException& other626) {
-  message = other626.message;
-  __isset = other626.__isset;
+InvalidPartitionException& InvalidPartitionException::operator=(const InvalidPartitionException& other690) {
+  message = other690.message;
+  __isset = other690.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const InvalidPartitionException& obj) {
@@ -15007,13 +16060,13 @@ void swap(UnknownPartitionException &a, UnknownPartitionException &b) {
   swap(a.__isset, b.__isset);
 }
 
-UnknownPartitionException::UnknownPartitionException(const UnknownPartitionException& other627) : TException() {
-  message = other627.message;
-  __isset = other627.__isset;
+UnknownPartitionException::UnknownPartitionException(const UnknownPartitionException& other691) : TException() {
+  message = other691.message;
+  __isset = other691.__isset;
 }
-UnknownPartitionException& UnknownPartitionException::operator=(const UnknownPartitionException& other628) {
-  message = other628.message;
-  __isset = other628.__isset;
+UnknownPartitionException& UnknownPartitionException::operator=(const UnknownPartitionException& other692) {
+  message = other692.message;
+  __isset = other692.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const UnknownPartitionException& obj) {
@@ -15097,13 +16150,13 @@ void swap(InvalidObjectException &a, InvalidObjectException &b) {
   swap(a.__isset, b.__isset);
 }
 
-InvalidObjectException::InvalidObjectException(const InvalidObjectException& other629) : TException() {
-  message = other629.message;
-  __isset = other629.__isset;
+InvalidObjectException::InvalidObjectException(const InvalidObjectException& other693) : TException() {
+  message = other693.message;
+  __isset = other693.__isset;
 }
-InvalidObjectException& InvalidObjectException::operator=(const InvalidObjectException& other630) {
-  message = other630.message;
-  __isset = other630.__isset;
+InvalidObjectException& InvalidObjectException::operator=(const InvalidObjectException& other694) {
+  message = other694.message;
+  __isset = other694.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const InvalidObjectException& obj) {
@@ -15187,13 +16240,13 @@ void swap(NoSuchObjectException &a, NoSuchObjectException &b) {
   swap(a.__isset, b.__isset);
 }
 
-NoSuchObjectException::NoSuchObjectException(const NoSuchObjectException& other631) : TException() {
-  message = other631.message;
-  __isset = other631.__isset;
+NoSuchObjectException::NoSuchObjectException(const NoSuchObjectException& other695) : TException() {
+  message = other695.message;
+  __isset = other695.__isset;
 }
-NoSuchObjectException& NoSuchObjectException::operator=(const NoSuchObjectException& other632) {
-  message = other632.message;
-  __isset = other632.__isset;
+NoSuchObjectException& NoSuchObjectException::operator=(const NoSuchObjectException& other696) {
+  message = other696.message;
+  __isset = other696.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const NoSuchObjectException& obj) {
@@ -15277,13 +16330,13 @@ void swap(IndexAlreadyExistsException &a, IndexAlreadyExistsException &b) {
   swap(a.__isset, b.__isset);
 }
 
-IndexAlreadyExistsException::IndexAlreadyExistsException(const IndexAlreadyExistsException& other633) : TException() {
-  message = other633.message;
-  __isset = other633.__isset;
+IndexAlreadyExistsException::IndexAlreadyExistsException(const IndexAlreadyExistsException& other697) : TException() {
+  message = other697.message;
+  __isset = other697.__isset;
 }
-IndexAlreadyExistsException& IndexAlreadyExistsException::operator=(const IndexAlreadyExistsException& other634) {
-  message = other634.message;
-  __isset = other634.__isset;
+IndexAlreadyExistsException& IndexAlreadyExistsException::operator=(const IndexAlreadyExistsException& other698) {
+  message = other698.message;
+  __isset = other698.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const IndexAlreadyExistsException& obj) {
@@ -15367,13 +16420,13 @@ void swap(InvalidOperationException &a, InvalidOperationException &b) {
   swap(a.__isset, b.__isset);
 }
 
-InvalidOperationException::InvalidOperationException(const InvalidOperationException& other635) : TException() {
-  message = other635.message;
-  __isset = other635.__isset;
+InvalidOperationException::InvalidOperationException(const InvalidOperationException& other699) : TException() {
+  message = other699.message;
+  __isset = other699.__isset;
 }
-InvalidOperationException& InvalidOperationException::operator=(const InvalidOperationException& other636) {
-  message = other636.message;
-  __isset = other636.__isset;
+InvalidOperationException& InvalidOperationException::operator=(const InvalidOperationException& other700) {
+  message = other700.message;
+  __isset = other700.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const InvalidOperationException& obj) {
@@ -15457,13 +16510,13 @@ void swap(ConfigValSecurityException &a, ConfigValSecurityException &b) {
   swap(a.__isset, b.__isset);
 }
 
-ConfigValSecurityException::ConfigValSecurityException(const ConfigValSecurityException& other637) : TException() {
-  message = other637.message;
-  __isset = other637.__isset;
+ConfigValSecurityException::ConfigValSecurityException(const ConfigValSecurityException& other701) : TException() {
+  message = other701.message;
+  __isset = other701.__isset;
 }
-ConfigValSecurityException& ConfigValSecurityException::operator=(const ConfigValSecurityException& other638) {
-  message = other638.message;
-  __isset = other638.__isset;
+ConfigValSecurityException& ConfigValSecurityException::operator=(const ConfigValSecurityException& other702) {
+  message = other702.message;
+  __isset = other702.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const ConfigValSecurityException& obj) {
@@ -15547,13 +16600,13 @@ void swap(InvalidInputException &a, InvalidInputException &b) {
   swap(a.__isset, b.__isset);
 }
 
-InvalidInputException::InvalidInputException(const InvalidInputException& other639) : TException() {
-  message = other639.message;
-  __isset = other639.__isset;
+InvalidInputException::InvalidInputException(const InvalidInputException& other703) : TException() {
+  message = other703.message;
+  __isset = other703.__isset;
 }
-InvalidInputException& InvalidInputException::operator=(const InvalidInputException& other640) {
-  message = other640.message;
-  __isset = other640.__isset;
+InvalidInputException& InvalidInputException::operator=(const InvalidInputException& other704) {
+  message = other704.message;
+  __isset = other704.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const InvalidInputException& obj) {
@@ -15637,13 +16690,13 @@ void swap(NoSuchTxnException &a, NoSuchTxnException &b) {
   swap(a.__isset, b.__isset);
 }
 
-NoSuchTxnException::NoSuchTxnException(const NoSuchTxnException& other641) : TException() {
-  message = other641.message;
-  __isset = other641.__isset;
+NoSuchTxnException::NoSuchTxnException(const NoSuchTxnException& other705) : TException() {
+  message = other705.message;
+  __isset = other705.__isset;
 }
-NoSuchTxnException& NoSuchTxnException::operator=(const NoSuchTxnException& other642) {
-  message = other642.message;
-  __isset = other642.__isset;
+NoSuchTxnException& NoSuchTxnException::operator=(const NoSuchTxnException& other706) {
+  message = other706.message;
+  __isset = other706.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const NoSuchTxnException& obj) {
@@ -15727,13 +16780,13 @@ void swap(TxnAbortedException &a, TxnAbortedException &b) {
   swap(a.__isset, b.__isset);
 }
 
-TxnAbortedException::TxnAbortedException(const TxnAbortedException& other643) : TException() {
-  message = other643.message;
-  __isset = other643.__isset;
+TxnAbortedException::TxnAbortedException(const TxnAbortedException& other707) : TException() {
+  message = other707.message;
+  __isset = other707.__isset;
 }
-TxnAbortedException& TxnAbortedException::operator=(const TxnAbortedException& other644) {
-  message = other644.message;
-  __isset = other644.__isset;
+TxnAbortedException& TxnAbortedException::operator=(const TxnAbortedException& other708) {
+  message = other708.message;
+  __isset = other708.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const TxnAbortedException& obj) {
@@ -15817,13 +16870,13 @@ void swap(TxnOpenException &a, TxnOpenException &b) {
   swap(a.__isset, b.__isset);
 }
 
-TxnOpenException::TxnOpenException(const TxnOpenException& other645) : TException() {
-  message = other645.message;
-  __isset = other645.__isset;
+TxnOpenException::TxnOpenException(const TxnOpenException& other709) : TException() {
+  message = other709.message;
+  __isset = other709.__isset;
 }
-TxnOpenException& TxnOpenException::operator=(const TxnOpenException& other646) {
-  message = other646.message;
-  __isset = other646.__isset;
+TxnOpenException& TxnOpenException::operator=(const TxnOpenException& other710) {
+  message = other710.message;
+  __isset = other710.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const TxnOpenException& obj) {
@@ -15907,13 +16960,13 @@ void swap(NoSuchLockException &a, NoSuchLockException &b) {
   swap(a.__isset, b.__isset);
 }
 
-NoSuchLockException::NoSuchLockException(const NoSuchLockException& other647) : TException() {
-  message = other647.message;
-  __isset = other647.__isset;
+NoSuchLockException::NoSuchLockException(const NoSuchLockException& other711) : TException() {
+  message = other711.message;
+  __isset = other711.__isset;
 }
-NoSuchLockException& NoSuchLockException::operator=(const NoSuchLockException& other648) {
-  message = other648.message;
-  __isset = other648.__isset;
+NoSuchLockException& NoSuchLockException::operator=(const NoSuchLockException& other712) {
+  message = other712.message;
+  __isset = other712.__isset;
   return *this;
 }
 std::ostream& operator<<(std::ostream& out, const NoSuchLockException& obj) {

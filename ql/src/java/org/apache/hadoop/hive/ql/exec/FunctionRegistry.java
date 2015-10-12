@@ -132,6 +132,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.HiveDecimalUtils;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
@@ -192,6 +193,7 @@ public final class FunctionRegistry {
     system.registerGenericUDF("size", GenericUDFSize.class);
 
     system.registerGenericUDF("round", GenericUDFRound.class);
+    system.registerGenericUDF("bround", GenericUDFBRound.class);
     system.registerGenericUDF("floor", GenericUDFFloor.class);
     system.registerUDF("sqrt", UDFSqrt.class, false);
     system.registerGenericUDF("cbrt", GenericUDFCbrt.class);
@@ -232,6 +234,8 @@ public final class FunctionRegistry {
     system.registerUDF("md5", UDFMd5.class, false);
     system.registerUDF("sha1", UDFSha1.class, false);
     system.registerUDF("sha", UDFSha1.class, false);
+    system.registerGenericUDF("aes_encrypt", GenericUDFAesEncrypt.class);
+    system.registerGenericUDF("aes_decrypt", GenericUDFAesDecrypt.class);
 
     system.registerGenericUDF("encode", GenericUDFEncode.class);
     system.registerGenericUDF("decode", GenericUDFDecode.class);
@@ -366,6 +370,7 @@ public final class FunctionRegistry {
     system.registerGenericUDAF("min", new GenericUDAFMin());
 
     system.registerGenericUDAF("sum", new GenericUDAFSum());
+    system.registerGenericUDAF("$SUM0", new GenericUDAFSumEmptyIsZero());
     system.registerGenericUDAF("count", new GenericUDAFCount());
     system.registerGenericUDAF("avg", new GenericUDAFAverage());
     system.registerGenericUDAF("std", new GenericUDAFStd());
@@ -764,10 +769,11 @@ public final class FunctionRegistry {
     return null;
   }
 
-  public static PrimitiveCategory getCommonCategory(TypeInfo a, TypeInfo b) {
+  public static PrimitiveCategory getPrimitiveCommonCategory(TypeInfo a, TypeInfo b) {
     if (a.getCategory() != Category.PRIMITIVE || b.getCategory() != Category.PRIMITIVE) {
       return null;
     }
+
     PrimitiveCategory pcA = ((PrimitiveTypeInfo)a).getPrimitiveCategory();
     PrimitiveCategory pcB = ((PrimitiveTypeInfo)b).getPrimitiveCategory();
 
@@ -801,10 +807,61 @@ public final class FunctionRegistry {
       return a;
     }
 
-    PrimitiveCategory commonCat = getCommonCategory(a, b);
-    if (commonCat == null)
+    // We try to infer a common primitive category
+    PrimitiveCategory commonCat = getPrimitiveCommonCategory(a, b);
+    if (commonCat != null) {
+      return getTypeInfoForPrimitiveCategory((PrimitiveTypeInfo)a, (PrimitiveTypeInfo)b, commonCat);
+    }
+    // It is not primitive; check if it is a struct and we can infer a common class
+    if (a.getCategory() == Category.STRUCT && b.getCategory() == Category.STRUCT) {
+      return getCommonClassForStruct((StructTypeInfo)a, (StructTypeInfo)b);
+    }
+    return null;
+  }
+
+  /**
+   * Find a common class that objects of both StructTypeInfo a and StructTypeInfo b can
+   * convert to. This is used for places other than comparison.
+   *
+   * @return null if no common class could be found.
+   */
+  public static TypeInfo getCommonClassForStruct(StructTypeInfo a, StructTypeInfo b) {
+    if (a == b || a.equals(b)) {
+      return a;
+    }
+
+    List<String> names = new ArrayList<String>();
+    List<TypeInfo> typeInfos = new ArrayList<TypeInfo>();
+
+    Iterator<String> namesIterator = a.getAllStructFieldNames().iterator();
+    Iterator<String> otherNamesIterator = b.getAllStructFieldNames().iterator();
+
+    // Compare the field names using ignore-case semantics
+    while (namesIterator.hasNext() && otherNamesIterator.hasNext()) {
+      String name = namesIterator.next();
+      if (!name.equalsIgnoreCase(otherNamesIterator.next())) {
+        return null;
+      }
+      names.add(name);
+    }
+
+    // Different number of field names
+    if (namesIterator.hasNext() || otherNamesIterator.hasNext()) {
       return null;
-    return getTypeInfoForPrimitiveCategory((PrimitiveTypeInfo)a, (PrimitiveTypeInfo)b, commonCat);
+    }
+
+    // Compare the field types
+    ArrayList<TypeInfo> fromTypes = a.getAllStructFieldTypeInfos();
+    ArrayList<TypeInfo> toTypes = b.getAllStructFieldTypeInfos();
+    for (int i = 0; i < fromTypes.size(); i++) {
+      TypeInfo commonType = getCommonClass(fromTypes.get(i), toTypes.get(i));
+      if (commonType == null) {
+        return null;
+      }
+      typeInfos.add(commonType);
+    }
+
+    return TypeInfoFactory.getStructTypeInfo(names, typeInfos);
   }
 
   public static boolean implicitConvertible(PrimitiveCategory from, PrimitiveCategory to) {
@@ -904,7 +961,7 @@ public final class FunctionRegistry {
     GenericUDAFParameterInfo paramInfo =
         new SimpleGenericUDAFParameterInfo(
             args, isDistinct, isAllColumns);
-    
+
     GenericUDAFEvaluator udafEvaluator;
     if (udafResolver instanceof GenericUDAFResolver2) {
       udafEvaluator =

@@ -28,6 +28,7 @@ import org.apache.hadoop.hive.common.JavaUtils;
 import org.apache.hadoop.hive.common.ValidTxnList;
 import org.apache.hadoop.hive.common.ValidReadTxnList;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.api.CompactionType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -38,6 +39,7 @@ import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.ql.io.RecordIdentifier;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.shims.HadoopShims.HdfsFileStatusWithId;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
@@ -52,6 +54,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.OutputCommitter;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hadoop.util.StringUtils;
@@ -114,6 +117,11 @@ public class CompactorMR {
     job.setInputFormat(CompactorInputFormat.class);
     job.setOutputFormat(NullOutputFormat.class);
     job.setOutputCommitter(CompactorOutputCommitter.class);
+    
+    String queueName = conf.getVar(HiveConf.ConfVars.COMPACTOR_JOB_QUEUE);
+    if(queueName != null && queueName.length() > 0) {
+      job.setQueueName(queueName);
+    }
 
     job.set(FINAL_LOCATION, sd.getLocation());
     job.set(TMP_LOCATION, sd.getLocation() + "/" + TMPDIR + "_" + UUID.randomUUID().toString());
@@ -131,7 +139,8 @@ public class CompactorMR {
     // and discovering that in getSplits is too late as we then have no way to pass it to our
     // mapper.
 
-    AcidUtils.Directory dir = AcidUtils.getAcidState(new Path(sd.getLocation()), conf, txns);
+    AcidUtils.Directory dir = AcidUtils.getAcidState(
+        new Path(sd.getLocation()), conf, txns, false);
     StringableList dirsToSearch = new StringableList();
     Path baseDir = null;
     if (isMajor) {
@@ -139,12 +148,13 @@ public class CompactorMR {
       // partition is just now being converted to ACID.
       baseDir = dir.getBaseDirectory();
       if (baseDir == null) {
-        List<FileStatus> originalFiles = dir.getOriginalFiles();
+        List<HdfsFileStatusWithId> originalFiles = dir.getOriginalFiles();
         if (!(originalFiles == null) && !(originalFiles.size() == 0)) {
           // There are original format files
-          for (FileStatus stat : originalFiles) {
-            dirsToSearch.add(stat.getPath());
-            LOG.debug("Adding original file " + stat.getPath().toString() + " to dirs to search");
+          for (HdfsFileStatusWithId stat : originalFiles) {
+            Path path = stat.getFileStatus().getPath();
+            dirsToSearch.add(path);
+            LOG.debug("Adding original file " + path + " to dirs to search");
           }
           // Set base to the location so that the input format reads the original files.
           baseDir = new Path(sd.getLocation());
@@ -183,7 +193,12 @@ public class CompactorMR {
     LOG.debug("Setting minimum transaction to " + minTxn);
     LOG.debug("Setting maximume transaction to " + maxTxn);
 
-    JobClient.runJob(job).waitForCompletion();
+    RunningJob rj = JobClient.runJob(job);
+    LOG.info("Submitted " + (isMajor ? CompactionType.MAJOR : CompactionType.MINOR) + " compaction job '" +
+      jobName + "' with jobID=" + rj.getID() + " to " + job.getQueueName() + " queue.  " +
+      "(current delta dirs count=" + dir.getCurrentDirectories().size() +
+      ", obsolete delta dirs count=" + dir.getObsolete());
+    rj.waitForCompletion();
     su.gatherStats();
   }
 
@@ -387,10 +402,10 @@ public class CompactorMR {
             dir.getName().startsWith(AcidUtils.DELTA_PREFIX)) {
           boolean sawBase = dir.getName().startsWith(AcidUtils.BASE_PREFIX);
           FileStatus[] files = fs.listStatus(dir, AcidUtils.bucketFileFilter);
-          for (int j = 0; j < files.length; j++) {
+          for(FileStatus f : files) {
             // For each file, figure out which bucket it is.
-            Matcher matcher = AcidUtils.BUCKET_DIGIT_PATTERN.matcher(files[j].getPath().getName());
-            addFileToMap(matcher, files[j].getPath(), sawBase, splitToBucketMap);
+            Matcher matcher = AcidUtils.BUCKET_DIGIT_PATTERN.matcher(f.getPath().getName());
+            addFileToMap(matcher, f.getPath(), sawBase, splitToBucketMap);
           }
         } else {
           // Legacy file, see if it's a bucket file
@@ -419,7 +434,7 @@ public class CompactorMR {
                               Map<Integer, BucketTracker> splitToBucketMap) {
       if (!matcher.find()) {
         LOG.warn("Found a non-bucket file that we thought matched the bucket pattern! " +
-            file.toString());
+            file.toString() + " Matcher=" + matcher.toString());
       }
       int bucketNum = Integer.valueOf(matcher.group());
       BucketTracker bt = splitToBucketMap.get(bucketNum);
