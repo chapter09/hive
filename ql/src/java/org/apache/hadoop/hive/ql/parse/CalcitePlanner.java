@@ -922,16 +922,19 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
 //      planner.addRule(HiveFilterJoinRule.FILTER_ON_JOIN);
 //      planner.addRule(HiveFilterJoinRule.JOIN);
-
+//
 //      planner.addRule(new HiveFilterProjectTransposeRule(HiveFilter.class,
 //            HiveFilter.DEFAULT_FILTER_FACTORY, HiveProject.class,
 //            HiveProject.DEFAULT_PROJECT_FACTORY));
-
+//
 //      planner.addRule(new HiveFilterSetOpTransposeRule(HiveFilter.DEFAULT_FILTER_FACTORY));
 //      planner.addRule(HiveJoinProjectTransposeRule.BOTH_PROJECT);
+//
 //      planner.addRule(HiveJoinProjectTransposeRule.LEFT_PROJECT);
 //      planner.addRule(HiveJoinProjectTransposeRule.RIGHT_PROJECT);
-      planner.addRule(HiveJoinCommuteRule.INSTANCE);
+//      planner.addRule(HiveJoinCommuteRule.INSTANCE);
+//      planner.addRule(HiveProjectMergeRule.INSTANCE);
+//      planner.addRule(ProjectRemoveRule.INSTANCE);
       planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:left", false,
             HiveJoin.class, HiveProject.DEFAULT_PROJECT_FACTORY));
       planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:right", true,
