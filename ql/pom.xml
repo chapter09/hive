@@ -112,14 +112,19 @@
       <version>${javolution.version}</version>
     </dependency>
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${log4j.version}</version>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <version>${log4j2.version}</version>
     </dependency>
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>apache-log4j-extras</artifactId>
-      <version>${log4j-extras.version}</version>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jcl</artifactId>
+      <version>${log4j2.version}</version>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
@@ -699,9 +704,12 @@
                   <include>org.apache.hive:hive-common</include>
                   <include>org.apache.hive:hive-exec</include>
                   <include>org.apache.hive:hive-serde</include>
+                  <include>org.apache.hive:hive-metastore</include>
                   <include>com.esotericsoftware.kryo:kryo</include>
                   <include>org.apache.parquet:parquet-hadoop-bundle</include>
                   <include>org.apache.thrift:libthrift</include>
+                  <include>org.apache.thrift:libfb303</include>
+                  <include>javax.jdo:jdo-api</include>
                   <include>commons-lang:commons-lang</include>
                   <include>org.apache.commons:commons-lang3</include>
                   <include>org.jodd:jodd-core</include>

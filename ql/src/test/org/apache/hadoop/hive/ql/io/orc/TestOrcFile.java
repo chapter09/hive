@@ -519,9 +519,9 @@ public class TestOrcFile {
       Object row = rows.next(null);
       assertEquals(tslist.get(idx++).getNanos(), ((TimestampWritable) row).getNanos());
     }
-    assertEquals(1, OrcUtils.getFlattenedColumnsCount(inspector));
+    assertEquals(0, writer.getSchema().getMaximumId());
     boolean[] expected = new boolean[] {false};
-    boolean[] included = OrcUtils.includeColumns("", "ts", inspector);
+    boolean[] included = OrcUtils.includeColumns("", writer.getSchema());
     assertEquals(true, Arrays.equals(expected, included));
   }
 
@@ -546,17 +546,18 @@ public class TestOrcFile {
     Reader reader = OrcFile.createReader(testFilePath,
         OrcFile.readerOptions(conf).filesystem(fs));
 
-    assertEquals(3, OrcUtils.getFlattenedColumnsCount(inspector));
+    TypeDescription schema = writer.getSchema();
+    assertEquals(2, schema.getMaximumId());
     boolean[] expected = new boolean[] {false, false, true};
-    boolean[] included = OrcUtils.includeColumns("string1", "bytes1,string1", inspector);
+    boolean[] included = OrcUtils.includeColumns("string1", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, false, false};
-    included = OrcUtils.includeColumns("", "bytes1,string1", inspector);
+    included = OrcUtils.includeColumns("", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, false, false};
-    included = OrcUtils.includeColumns(null, "bytes1,string1", inspector);
+    included = OrcUtils.includeColumns(null, schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     // check the stats
@@ -656,9 +657,10 @@ public class TestOrcFile {
     Reader reader = OrcFile.createReader(testFilePath,
         OrcFile.readerOptions(conf).filesystem(fs));
 
-    assertEquals(3, OrcUtils.getFlattenedColumnsCount(inspector));
+    TypeDescription schema = writer.getSchema();
+    assertEquals(2, schema.getMaximumId());
     boolean[] expected = new boolean[] {false, true, false};
-    boolean[] included = OrcUtils.includeColumns("int1", "int1,string1", inspector);
+    boolean[] included = OrcUtils.includeColumns("int1", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     Metadata metadata = reader.getMetadata();
@@ -742,14 +744,14 @@ public class TestOrcFile {
     Reader reader = OrcFile.createReader(testFilePath,
         OrcFile.readerOptions(conf).filesystem(fs));
 
-    assertEquals(24, OrcUtils.getFlattenedColumnsCount(inspector));
+    TypeDescription schema = writer.getSchema();
+    assertEquals(23, schema.getMaximumId());
     boolean[] expected = new boolean[] {false, false, false, false, false,
         false, false, false, false, false,
         false, false, false, false, false,
         false, false, false, false, false,
         false, false, false, false};
-    boolean[] included = OrcUtils.includeColumns("",
-        "boolean1,byte1,short1,int1,long1,float1,double1,bytes1,string1,middle,list,map", inspector);
+    boolean[] included = OrcUtils.includeColumns("", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, true, false, false, false,
@@ -757,8 +759,7 @@ public class TestOrcFile {
         true, true, true, true, true,
         false, false, false, false, true,
         true, true, true, true};
-    included = OrcUtils.includeColumns("boolean1,string1,middle,map",
-        "boolean1,byte1,short1,int1,long1,float1,double1,bytes1,string1,middle,list,map", inspector);
+    included = OrcUtils.includeColumns("boolean1,string1,middle,map", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, true, false, false, false,
@@ -766,8 +767,7 @@ public class TestOrcFile {
         true, true, true, true, true,
         false, false, false, false, true,
         true, true, true, true};
-    included = OrcUtils.includeColumns("boolean1,string1,middle,map",
-        "boolean1,byte1,short1,int1,long1,float1,double1,bytes1,string1,middle,list,map", inspector);
+    included = OrcUtils.includeColumns("boolean1,string1,middle,map", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, true, true, true, true,
@@ -777,7 +777,7 @@ public class TestOrcFile {
         true, true, true, true};
     included = OrcUtils.includeColumns(
         "boolean1,byte1,short1,int1,long1,float1,double1,bytes1,string1,middle,list,map",
-        "boolean1,byte1,short1,int1,long1,float1,double1,bytes1,string1,middle,list,map", inspector);
+        schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     Metadata metadata = reader.getMetadata();
@@ -1312,17 +1312,18 @@ public class TestOrcFile {
     Reader reader = OrcFile.createReader(testFilePath,
         OrcFile.readerOptions(conf).filesystem(fs));
 
-    assertEquals(6, OrcUtils.getFlattenedColumnsCount(inspector));
+    TypeDescription schema = writer.getSchema();
+    assertEquals(5, schema.getMaximumId());
     boolean[] expected = new boolean[] {false, false, false, false, false, false};
-    boolean[] included = OrcUtils.includeColumns("", "time,union,decimal", inspector);
+    boolean[] included = OrcUtils.includeColumns("", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, true, false, false, false, true};
-    included = OrcUtils.includeColumns("time,decimal", "time,union,decimal", inspector);
+    included = OrcUtils.includeColumns("time,decimal", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     expected = new boolean[] {false, false, true, true, true, false};
-    included = OrcUtils.includeColumns("union", "time,union,decimal", inspector);
+    included = OrcUtils.includeColumns("union", schema);
     assertEquals(true, Arrays.equals(expected, included));
 
     assertEquals(false, reader.getMetadataKeys().iterator().hasNext());
@@ -1923,9 +1924,9 @@ public class TestOrcFile {
     SearchArgument sarg = SearchArgumentFactory.newBuilder()
         .startAnd()
           .startNot()
-             .lessThan("int1", PredicateLeaf.Type.INTEGER, 300000)
+             .lessThan("int1", PredicateLeaf.Type.LONG, 300000L)
           .end()
-          .lessThan("int1", PredicateLeaf.Type.INTEGER, 600000)
+          .lessThan("int1", PredicateLeaf.Type.LONG, 600000L)
         .end()
         .build();
     RecordReader rows = reader.rowsOptions(new Reader.Options()
@@ -1946,7 +1947,7 @@ public class TestOrcFile {
     // look through the file with no rows selected
     sarg = SearchArgumentFactory.newBuilder()
         .startAnd()
-          .lessThan("int1", PredicateLeaf.Type.INTEGER, 0)
+          .lessThan("int1", PredicateLeaf.Type.LONG, 0L)
         .end()
         .build();
     rows = reader.rowsOptions(new Reader.Options()
@@ -1959,9 +1960,9 @@ public class TestOrcFile {
     // select first 100 and last 100 rows
     sarg = SearchArgumentFactory.newBuilder()
         .startOr()
-          .lessThan("int1", PredicateLeaf.Type.INTEGER, 300 * 100)
+          .lessThan("int1", PredicateLeaf.Type.LONG, 300L * 100)
           .startNot()
-            .lessThan("int1", PredicateLeaf.Type.INTEGER, 300 * 3400)
+            .lessThan("int1", PredicateLeaf.Type.LONG, 300L * 3400)
           .end()
         .end()
         .build();
