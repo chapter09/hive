@@ -1037,6 +1037,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       hepPgmBldr.addRuleInstance(HiveAggregateProjectMergeRule.INSTANCE);
       if (conf.getBoolVar(ConfVars.AGGR_JOIN_TRANSPOSE)) {
         hepPgmBldr.addRuleInstance(HiveAggregateJoinTransposeRule.INSTANCE);
+      }
 
       hepPgm = hepPgmBldr.build();
       HepPlanner hepPlanner = new HepPlanner(hepPgm);
@@ -1177,7 +1178,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       // 5. Projection Pruning
       HiveRelFieldTrimmer fieldTrimmer = new HiveRelFieldTrimmer(null, HiveProject.DEFAULT_PROJECT_FACTORY,
           HiveFilter.DEFAULT_FILTER_FACTORY, HiveJoin.HIVE_JOIN_FACTORY,
-          HiveSemiJoin.HIVE_SEMIJOIN_FACTORY, HiveSort.HIVE_SORT_REL_FACTORY,
+          HiveSemiJoin.HIVE_SEMIJOIN_FACTORY, HiveSortLimit.HIVE_SORT_REL_FACTORY,
           HiveAggregate.HIVE_AGGR_REL_FACTORY, HiveUnion.UNION_REL_FACTORY);
       basePlan = fieldTrimmer.trim(basePlan);
 
