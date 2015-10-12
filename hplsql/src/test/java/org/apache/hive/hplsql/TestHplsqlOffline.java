@@ -43,6 +43,11 @@ public class TestHplsqlOffline {
     run("create_table_ora");
   }
   
+  @Test
+  public void testSelectDb2() throws Exception {
+    run("select_db2");
+  }
+
   /**
    * Run a test file
    */
@@ -66,7 +71,7 @@ public class TestHplsqlOffline {
     BufferedReader reader = new BufferedReader(new StringReader(s));
     String line = null;
     while ((line = reader.readLine()) != null) {
-      if (!line.startsWith("log4j:")) {
+      if (!line.startsWith("log4j:") && !line.contains("INFO Log4j")) {
         sb.append(line);
         sb.append("\n");
       }

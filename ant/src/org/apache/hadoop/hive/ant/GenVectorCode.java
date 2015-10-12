@@ -696,6 +696,7 @@ public class GenVectorCode extends Task {
       // template, <ClassNamePrefix>, <ReturnType>, <OperandType>, <FuncName>, <OperandCast>,
       //   <ResultCast>, <Cleanup> <VectorExprArgType>
       {"ColumnUnaryFunc", "FuncRound", "double", "double", "MathExpr.round", "", "", "", ""},
+      {"ColumnUnaryFunc", "FuncBRound", "double", "double", "MathExpr.bround", "", "", "", ""},
       // round(longCol) returns a long and is a no-op. So it will not be implemented here.
       // round(Col, N) is a special case and will be implemented separately from this template
       {"ColumnUnaryFunc", "FuncFloor", "long", "double", "Math.floor", "", "(long)", "", ""},
@@ -752,6 +753,7 @@ public class GenVectorCode extends Task {
       {"DecimalColumnUnaryFunc", "FuncAbs", "decimal", "DecimalUtil.abs"},
       {"DecimalColumnUnaryFunc", "FuncSign", "long", "DecimalUtil.sign"},
       {"DecimalColumnUnaryFunc", "FuncRound", "decimal", "DecimalUtil.round"},
+      {"DecimalColumnUnaryFunc", "FuncBRound", "decimal", "DecimalUtil.bround"},
       {"DecimalColumnUnaryFunc", "FuncNegate", "decimal", "DecimalUtil.negate"},
 
       // Casts
@@ -786,8 +788,6 @@ public class GenVectorCode extends Task {
 
       // IF conditional expression
       // fileHeader, resultType, arg2Type, arg3Type
-      {"IfExprColumnColumn", "long"},
-      {"IfExprColumnColumn", "double"},
       {"IfExprColumnScalar", "long", "long"},
       {"IfExprColumnScalar", "double", "long"},
       {"IfExprColumnScalar", "long", "double"},
@@ -1049,8 +1049,6 @@ public class GenVectorCode extends Task {
         generateFilterStringGroupColumnCompareStringGroupColumn(tdesc);
       } else if (tdesc[0].equals("StringGroupColumnCompareStringGroupColumn")) {
         generateStringGroupColumnCompareStringGroupColumn(tdesc);
-      } else if (tdesc[0].equals("IfExprColumnColumn")) {
-        generateIfExprColumnColumn(tdesc);
       } else if (tdesc[0].equals("IfExprColumnScalar")) {
         generateIfExprColumnScalar(tdesc);
       } else if (tdesc[0].equals("IfExprScalarColumn")) {
@@ -1638,33 +1636,6 @@ public class GenVectorCode extends Task {
     templateString = templateString.replaceAll("<OperandType>", operandType);
     templateString = templateString.replaceAll("<ReturnType>", returnType);
     templateString = templateString.replaceAll("<VectorExprArgType>", vectorExprArgType);
-    writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
-        className, templateString);
-  }
-
-  private void generateIfExprColumnColumn(String[] tdesc) throws Exception {
-    String operandType = tdesc[1];
-    String inputColumnVectorType = this.getColumnVectorType(operandType);
-    String outputColumnVectorType = inputColumnVectorType;
-    String returnType = operandType;
-    String className = "IfExpr" + getCamelCaseType(operandType) + "Column"
-        + getCamelCaseType(operandType) + "Column";
-    String outputFile = joinPath(this.expressionOutputDirectory, className + ".java");
-    File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
-    String templateString = readFile(templateFile);
-    // Expand, and write result
-    templateString = templateString.replaceAll("<ClassName>", className);
-    templateString = templateString.replaceAll("<InputColumnVectorType>", inputColumnVectorType);
-    templateString = templateString.replaceAll("<OperandType>", operandType);
-    String vectorExprArgType = operandType;
-
-    // Toss in timestamp and date.
-    if (operandType.equals("long")) {
-      // Let comparisons occur for DATE and TIMESTAMP, too.
-      vectorExprArgType = "int_datetime_interval_family";
-    }
-    templateString = templateString.replaceAll("<VectorExprArgType>", vectorExprArgType);
-
     writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
         className, templateString);
   }

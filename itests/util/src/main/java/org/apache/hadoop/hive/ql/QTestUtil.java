@@ -62,9 +62,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster;
 import org.apache.hadoop.hive.cli.CliDriver;
 import org.apache.hadoop.hive.cli.CliSessionState;
@@ -84,6 +88,7 @@ import org.apache.hadoop.hive.ql.exec.spark.session.SparkSessionManagerImpl;
 import org.apache.hadoop.hive.ql.lockmgr.zookeeper.CuratorFrameworkSingleton;
 import org.apache.hadoop.hive.ql.lockmgr.zookeeper.ZooKeeperHiveLockManager;
 import org.apache.hadoop.hive.ql.metadata.Hive;
+import org.apache.hadoop.hive.ql.metadata.InvalidTableException;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.parse.ASTNode;
 import org.apache.hadoop.hive.ql.parse.BaseSemanticAnalyzer;
@@ -100,6 +105,8 @@ import org.apache.hadoop.hive.shims.HadoopShims;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.util.Shell;
 import org.apache.hive.common.util.StreamPrinter;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.tools.ant.BuildException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -121,8 +128,8 @@ public class QTestUtil {
 
   private static final Log LOG = LogFactory.getLog("QTestUtil");
   private static final String QTEST_LEAVE_FILES = "QTEST_LEAVE_FILES";
-  private final String defaultInitScript = "q_test_init.sql";
-  private final String defaultCleanupScript = "q_test_cleanup.sql";
+  private final static String defaultInitScript = "q_test_init.sql";
+  private final static String defaultCleanupScript = "q_test_cleanup.sql";
   private final String[] testOnlyCommands = new String[]{"crypto"};
 
   private String testWarehouse;
@@ -149,7 +156,6 @@ public class QTestUtil {
   private HadoopShims.MiniMrShim mr = null;
   private HadoopShims.MiniDFSShim dfs = null;
   private HadoopShims.HdfsEncryptionShim hes = null;
-  private boolean miniMr = false;
   private String hadoopVer = null;
   private QTestSetup setup = null;
   private SparkSession sparkSession = null;
@@ -158,10 +164,12 @@ public class QTestUtil {
 
   private final String initScript;
   private final String cleanupScript;
+  private boolean useHBaseMetastore = false;
 
   public interface SuiteAddTestFunctor {
     public void addTestToSuite(TestSuite suite, Object setup, String tName);
   }
+  private HBaseTestingUtility utility;
 
   static {
     for (String srcTable : System.getProperty("test.src.tables", "").trim().split(",")) {
@@ -209,7 +217,7 @@ public class QTestUtil {
           continue;
         }
 
-        if (file.isDir()) {
+        if (file.isDirectory()) {
           if (!destFs.exists(local_path)) {
             destFs.mkdirs(local_path);
           }
@@ -342,14 +350,42 @@ public class QTestUtil {
     return "jceks://file" + new Path(keyDir, "test.jks").toUri();
   }
 
+  private void startMiniHBaseCluster() throws Exception {
+    Configuration hbaseConf = HBaseConfiguration.create();
+    hbaseConf.setInt("hbase.master.info.port", -1);
+    utility = new HBaseTestingUtility(hbaseConf);
+    utility.startMiniCluster();
+    conf = new HiveConf(utility.getConfiguration(), Driver.class);
+    HBaseAdmin admin = utility.getHBaseAdmin();
+    // Need to use reflection here to make compilation pass since HBaseIntegrationTests
+    // is not compiled in hadoop-1. All HBaseMetastore tests run under hadoop-2, so this
+    // guarantee HBaseIntegrationTests exist when we hitting this code path
+    java.lang.reflect.Method initHBaseMetastoreMethod = Class.forName(
+        "org.apache.hadoop.hive.metastore.hbase.HBaseStoreTestUtil")
+        .getMethod("initHBaseMetastore", HBaseAdmin.class, HiveConf.class);
+    initHBaseMetastoreMethod.invoke(null, admin, conf);
+  }
+
   public QTestUtil(String outDir, String logDir, MiniClusterType clusterType,
       String confDir, String hadoopVer, String initScript, String cleanupScript)
     throws Exception {
+    this(outDir, logDir, clusterType, confDir, hadoopVer, initScript, cleanupScript, false);
+  }
+  public QTestUtil(String outDir, String logDir, MiniClusterType clusterType,
+      String confDir, String hadoopVer, String initScript, String cleanupScript, boolean useHBaseMetastore)
+    throws Exception {
     this.outDir = outDir;
     this.logDir = logDir;
+    this.useHBaseMetastore = useHBaseMetastore;
+
+    Logger hadoopLog = Logger.getLogger("org.apache.hadoop");
+    hadoopLog.setLevel(Level.INFO);
     if (confDir != null && !confDir.isEmpty()) {
       HiveConf.setHiveSiteLocation(new URL("file://"+ new File(confDir).toURI().getPath() + "/hive-site.xml"));
       System.out.println("Setting hive-site: "+HiveConf.getHiveSiteLocation());
+    }
+    if (useHBaseMetastore) {
+      startMiniHBaseCluster();
     }
     conf = new HiveConf(Driver.class);
     this.hadoopVer = getHadoopMainVersion(hadoopVer);
@@ -410,14 +446,9 @@ public class QTestUtil {
     if (scriptsDir == null) {
       scriptsDir = new File(".").getAbsolutePath() + "/data/scripts";
     }
-    if (initScript.isEmpty()) {
-      initScript = defaultInitScript;
-    }
-    if (cleanupScript.isEmpty()) {
-      cleanupScript = defaultCleanupScript;
-    }
-    this.initScript = scriptsDir + "/" + initScript;
-    this.cleanupScript = scriptsDir + "/" + cleanupScript;
+
+    this.initScript = scriptsDir + File.separator + initScript;
+    this.cleanupScript = scriptsDir + File.separator + cleanupScript;
 
     overWrite = "true".equalsIgnoreCase(System.getProperty("test.output.overwrite"));
 
@@ -443,6 +474,9 @@ public class QTestUtil {
       } finally {
         sparkSession = null;
       }
+    }
+    if (useHBaseMetastore) {
+      utility.shutdownMiniCluster();
     }
     if (mr != null) {
       mr.shutdown();
@@ -676,7 +710,13 @@ public class QTestUtil {
       SessionState.get().setCurrentDatabase(dbName);
       for (String tblName : db.getAllTables()) {
         if (!DEFAULT_DATABASE_NAME.equals(dbName) || !srcTables.contains(tblName)) {
-          Table tblObj = db.getTable(tblName);
+          Table tblObj = null;
+          try {
+            tblObj = db.getTable(tblName);
+          } catch (InvalidTableException e) {
+            LOG.warn("Trying to drop table " + e.getTableName() + ". But it does not exist.");
+            continue;
+          }
           // dropping index table can not be dropped directly. Dropping the base
           // table will automatically drop all its index table
           if(tblObj.isIndexTable()) {
@@ -705,7 +745,7 @@ public class QTestUtil {
       FileSystem fileSystem = p.getFileSystem(conf);
       if (fileSystem.exists(p)) {
         for (FileStatus status : fileSystem.listStatus(p)) {
-          if (status.isDir() && !srcTables.contains(status.getPath().getName())) {
+          if (status.isDirectory() && !srcTables.contains(status.getPath().getName())) {
             fileSystem.delete(status.getPath(), true);
           }
         }
@@ -755,16 +795,19 @@ public class QTestUtil {
     clearTablesCreatedDuringTests();
     clearKeysCreatedInTests();
 
-    SessionState.get().getConf().setBoolean("hive.test.shutdown.phase", true);
-
-    String cleanupCommands = readEntireFileIntoString(new File(cleanupScript));
-    LOG.info("Cleanup (" + cleanupScript + "):\n" + cleanupCommands);
-    if(cliDriver == null) {
-      cliDriver = new CliDriver();
+    File cleanupFile = new File(cleanupScript);
+    if (cleanupFile.isFile()) {
+      String cleanupCommands = readEntireFileIntoString(cleanupFile);
+      LOG.info("Cleanup (" + cleanupScript + "):\n" + cleanupCommands);
+      if(cliDriver == null) {
+        cliDriver = new CliDriver();
+      }
+      SessionState.get().getConf().setBoolean("hive.test.shutdown.phase", true);
+      cliDriver.processLine(cleanupCommands);
+      SessionState.get().getConf().setBoolean("hive.test.shutdown.phase", false);
+    } else {
+      LOG.info("No cleanup script detected. Skipping.");
     }
-    cliDriver.processLine(cleanupCommands);
-
-    SessionState.get().getConf().setBoolean("hive.test.shutdown.phase", false);
 
     // delete any contents in the warehouse dir
     Path p = new Path(testWarehouse);
@@ -809,14 +852,21 @@ public class QTestUtil {
     if(!isSessionStateStarted) {
       startSessionState();
     }
-    conf.setBoolean("hive.test.init.phase", true);
 
-    String initCommands = readEntireFileIntoString(new File(this.initScript));
-    LOG.info("Initial setup (" + initScript + "):\n" + initCommands);
     if(cliDriver == null) {
       cliDriver = new CliDriver();
     }
     cliDriver.processLine("set test.data.dir=" + testFiles + ";");
+    File scriptFile = new File(this.initScript);
+    if (!scriptFile.isFile()) {
+      LOG.info("No init script detected. Skipping");
+      return;
+    }
+    conf.setBoolean("hive.test.init.phase", true);
+
+    String initCommands = readEntireFileIntoString(scriptFile);
+    LOG.info("Initial setup (" + initScript + "):\n" + initCommands);
+
     cliDriver.processLine(initCommands);
 
     conf.setBoolean("hive.test.init.phase", false);
@@ -912,6 +962,7 @@ public class QTestUtil {
 
   private CliSessionState createSessionState() {
    return new CliSessionState(conf) {
+      @Override
       public void setSparkSession(SparkSession sparkSession) {
         super.setSparkSession(sparkSession);
         if (sparkSession != null) {
@@ -1134,11 +1185,6 @@ public class QTestUtil {
     newCommands.append(commands.substring(lastMatchEnd, commands.length()));
     commands = newCommands.toString();
     return commands;
-  }
-
-  private boolean isComment(final String line) {
-    String lineTrimmed = line.trim();
-    return lineTrimmed.startsWith("#") || lineTrimmed.startsWith("--");
   }
 
   public boolean shouldBeSkipped(String tname) {
@@ -1571,7 +1617,7 @@ public class QTestUtil {
       // close it first.
       SessionState ss = SessionState.get();
       if (ss != null && ss.out != null && ss.out != System.out) {
-	ss.out.close();
+  ss.out.close();
       }
 
       String inSorted = inFileName + SORT_SUFFIX;
@@ -1816,7 +1862,7 @@ public class QTestUtil {
   {
     QTestUtil[] qt = new QTestUtil[qfiles.length];
     for (int i = 0; i < qfiles.length; i++) {
-      qt[i] = new QTestUtil(resDir, logDir, MiniClusterType.none, null, "0.20", "", "");
+      qt[i] = new QTestUtil(resDir, logDir, MiniClusterType.none, null, "0.20", defaultInitScript, defaultCleanupScript);
       qt[i].addFile(qfiles[i]);
       qt[i].clearTestSideEffects();
     }
