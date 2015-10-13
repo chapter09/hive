@@ -933,6 +933,8 @@ public class CalcitePlanner extends SemanticAnalyzer {
 //      planner.addRule(HiveJoinProjectTransposeRule.LEFT_PROJECT);
 //      planner.addRule(HiveJoinProjectTransposeRule.RIGHT_PROJECT);
 //      planner.addRule(HiveJoinCommuteRule.INSTANCE);
+//      XXX having project merge and project remove with transpose takes a lot
+//      of time in creating the lattice
 //      planner.addRule(HiveProjectMergeRule.INSTANCE);
 //      planner.addRule(ProjectRemoveRule.INSTANCE);
       planner.addRule(new JoinPushThroughJoinRule("JoinPushThroughJoin:left", false,
