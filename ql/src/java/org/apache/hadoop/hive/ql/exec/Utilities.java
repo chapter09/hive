@@ -366,7 +366,7 @@ public final class Utilities {
   public static void setBaseWork(Configuration conf, String name, BaseWork work) {
     Path path = getPlanPath(conf, name);
     gWorkMap.get().put(path, work);
-    LOG.info("Raajay: In setBaseWork: dump the work into a dictionary with key = " + path);
+    LOG.debug("Raajay: In setBaseWork: dump the work into a dictionary with key = " + path);
   }
 
   /**
@@ -688,7 +688,7 @@ public final class Utilities {
   }
 
   public static Path setMapWork(Configuration conf, MapWork w, Path hiveScratchDir, boolean useCache) {
-    LOG.info("Raajay: in setMapWork");
+    LOG.debug("Raajay: in setMapWork");
     return setBaseWork(conf, w, hiveScratchDir, MAP_PLAN_NAME, useCache);
   }
 
@@ -705,7 +705,7 @@ public final class Utilities {
       OutputStream out = null;
 
       if (HiveConf.getBoolVar(conf, ConfVars.HIVE_RPC_QUERY_PLAN)) {
-        LOG.info("Raajay: we are using HIVE_RPC_QUERY_PLAN");
+        LOG.debug("Raajay: we are using HIVE_RPC_QUERY_PLAN");
         // add it to the conf
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         try {
@@ -722,7 +722,7 @@ public final class Utilities {
             Base64.encodeBase64String(byteOut.toByteArray()));
 
       } else {
-        LOG.info("Raajay: we are NOT using HIVE_RPC_QUERY_PLAN");
+        LOG.debug("Raajay: we are NOT using HIVE_RPC_QUERY_PLAN");
         // use the default file system of the conf
         FileSystem fs = planPath.getFileSystem(conf);
         try {
@@ -777,13 +777,13 @@ public final class Utilities {
     if (getPlanPath(conf) == null) {
       // this is the unique conf ID, which is kept in JobConf as part of the plan file name
       String jobID = UUID.randomUUID().toString();
-      LOG.info("Raajay: Created random jobID = " + jobID);
+      LOG.debug("Raajay: Created random jobID = " + jobID);
       Path planPath = new Path(hiveScratchDir, jobID);
       FileSystem fs = planPath.getFileSystem(conf);
       fs.mkdirs(planPath);
-      LOG.info("Raajay: Created directory in hiveScratchDir  = " + planPath);
+      LOG.debug("Raajay: Created directory in hiveScratchDir  = " + planPath);
       HiveConf.setVar(conf, HiveConf.ConfVars.PLAN, planPath.toUri().toString());
-      LOG.info("Raajay: Set variable PLAN in JobConf to = " + planPath.toUri().toString());
+      LOG.debug("Raajay: Set variable PLAN in JobConf to = " + planPath.toUri().toString());
     }
   }
 
@@ -957,14 +957,14 @@ public final class Utilities {
     LOG.info("Serializing " + plan.getClass().getSimpleName() + " via " + serializationType);
 
     if("javaXML".equalsIgnoreCase(serializationType)) {
-      LOG.info("Raajay: Serializing using JAVA-XML");
+      LOG.debug("Raajay: Serializing using JAVA-XML");
       serializeObjectByJavaXML(plan, out);
     } else {
       if(cloningPlan) {
-        LOG.info("Raajay: Cloning using kryo");
+        LOG.debug("Raajay: Cloning using kryo");
         serializeObjectByKryo(cloningQueryPlanKryo.get(), plan, out);
       } else {
-        LOG.info("Raajay: Serializing using kryo");
+        LOG.debug("Raajay: Serializing using kryo");
         serializeObjectByKryo(runtimeSerializationKryo.get(), plan, out);
       }
 
@@ -3720,7 +3720,7 @@ public final class Utilities {
           Path tempPath = Utilities.toTempPath(tempDir);
           FileSystem fs = tempPath.getFileSystem(conf);
           fs.mkdirs(tempPath);
-          LOG.info("Raajay: tempDir created " + tempPath);
+          LOG.debug("Raajay: tempDir created " + tempPath);
         }
       }
 
