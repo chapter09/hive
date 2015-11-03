@@ -954,7 +954,7 @@ public final class Utilities {
     PerfLogger perfLogger = SessionState.getPerfLogger();
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.SERIALIZE_PLAN);
     String serializationType = conf.get(HiveConf.ConfVars.PLAN_SERIALIZATION.varname, "kryo");
-    LOG.info("Serializing " + plan.getClass().getSimpleName() + " via " + serializationType);
+    LOG.debug("Serializing " + plan.getClass().getSimpleName() + " via " + serializationType);
 
     if("javaXML".equalsIgnoreCase(serializationType)) {
       LOG.debug("Raajay: Serializing using JAVA-XML");
