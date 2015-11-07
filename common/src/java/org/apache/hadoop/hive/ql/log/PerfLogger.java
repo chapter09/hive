@@ -114,7 +114,7 @@ public class PerfLogger {
    */
   public void PerfLogBegin(String callerName, String method) {
     long startTime = System.currentTimeMillis();
-    LOG.info("<PERFLOG method=" + method + " from=" + callerName + ">");
+    LOG.debug("<PERFLOG method=" + method + " from=" + callerName + ">");
     startTimes.put(method, new Long(startTime));
   }
   /**
@@ -154,7 +154,7 @@ public class PerfLogger {
       sb.append(" ").append(additionalInfo);
     }
     sb.append(">");
-    LOG.info(sb);
+    LOG.debug(sb);
 
     return duration;
   }
