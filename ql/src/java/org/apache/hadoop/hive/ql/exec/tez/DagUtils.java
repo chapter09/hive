@@ -255,7 +255,7 @@ public class DagUtils {
 
     Class mergeInputClass;
 
-    LOG.info("Creating Edge between " + group.getGroupName() + " and " + w.getName());
+    LOG.debug("Creating Edge between " + group.getGroupName() + " and " + w.getName());
 
     EdgeType edgeType = edgeProp.getEdgeType();
     switch (edgeType) {

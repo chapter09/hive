@@ -326,7 +326,7 @@ public class Context {
 
       Path newScratchDir = getScratchDir(uri.getScheme(), uri.getAuthority(),
           !explain, uri.getPath());
-      LOG.info("New scratch dir is " + newScratchDir);
+      LOG.debug("New scratch dir is " + newScratchDir);
       return newScratchDir;
     } catch (IOException e) {
       throw new RuntimeException(e);

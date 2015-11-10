@@ -717,7 +717,7 @@ public final class Utilities {
           IOUtils.closeStream(out);
         }
 
-        LOG.info("Setting plan to conf variable : " + planPath.toUri().getPath());
+        LOG.debug("Setting plan to conf variable : " + planPath.toUri().getPath());
         conf.set(planPath.toUri().getPath(),
             Base64.encodeBase64String(byteOut.toByteArray()));
 
@@ -3462,7 +3462,7 @@ public final class Utilities {
     List<Path> pathsToAdd = new LinkedList<Path>();
     // AliasToWork contains all the aliases
     for (String alias : work.getAliasToWork().keySet()) {
-      LOG.info("Processing alias " + alias);
+      LOG.debug("Processing alias " + alias);
 
       // The alias may not have any path
       Path path = null;
